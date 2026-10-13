@@ -315,7 +315,7 @@
         <div id="tabSaida" class="tab-content">
             <div class="card" style="max-width: 600px; margin: 0 auto;">
                 <h2>📤 Formulário de Saída de Material</h2>
-                <form id="formSaida" onsubmit="processarMovimento(event, 'salida')">
+                <form id="formSaida" onsubmit="processarMovimento(event, 'saida')">
                     <div class="form-group">
                         <label for="codSalida">Código do Item ou Bipagem:</label>
                         <input type="text" id="codSalida" placeholder="Digite o código..." onblur="carregarValidadesDoItem()" required>
@@ -516,7 +516,7 @@
             });
         }
 
-        // Função que envia os dados para o Power Automate via API HTTP
+        // Função que envia os dados estruturados em array para o Power Automate via API HTTP
         async function processarMovimento(event, tipo) {
             event.preventDefault();
             let alerta = document.getElementById('msgAlerta');
@@ -526,18 +526,26 @@
             if(tipo === 'entrada') {
                 dadosEnvio = {
                     acao: "entrada",
-                    codigo: document.getElementById('codEntrada').value,
-                    quantidade: parseInt(document.getElementById('qtdEntrada').value),
-                    validade: document.getElementById('valEntrada').value,
-                    motivo_turma: document.getElementById('motivoEntrada').value
+                    itens: [
+                        {
+                            codigo: document.getElementById('codEntrada').value,
+                            quantidade: parseInt(document.getElementById('qtdEntrada').value),
+                            validade: document.getElementById('valEntrada').value,
+                            motivo_turma: document.getElementById('motivoEntrada').value
+                        }
+                    ]
                 };
             } else {
                 dadosEnvio = {
                     acao: "saida",
-                    codigo: document.getElementById('codSalida').value,
-                    quantidade: parseInt(document.getElementById('qtdSalida').value),
-                    validade: document.getElementById('selValidade').value,
-                    motivo_turma: document.getElementById('turmaSalida').value
+                    itens: [
+                        {
+                            codigo: document.getElementById('codSalida').value,
+                            quantidade: parseInt(document.getElementById('qtdSalida').value),
+                            validade: document.getElementById('selValidade').value,
+                            motivo_turma: document.getElementById('turmaSalida').value
+                        }
+                    ]
                 };
             }
 
