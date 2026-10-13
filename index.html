@@ -33,7 +33,7 @@
             background-color: #162b4d;
             display: flex;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
             padding: 10px;
             flex-wrap: wrap;
         }
@@ -41,7 +41,7 @@
             background: transparent;
             color: #ccc;
             border: none;
-            padding: 10px 15px;
+            padding: 10px 16px;
             font-size: 13px;
             font-weight: 600;
             cursor: pointer;
@@ -58,8 +58,8 @@
             background-color: rgba(255,255,255,0.1);
         }
         .container {
-            max-width: 950px;
-            margin: 30px auto;
+            max-width: 1000px;
+            margin: 25px auto;
             padding: 0 15px;
         }
         .tab-content {
@@ -67,11 +67,6 @@
         }
         .tab-content.active {
             display: block;
-        }
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
         }
         .card {
             background: white;
@@ -110,7 +105,6 @@
             border-color: #0b1d3a;
         }
         button.btn-acao {
-            background-color: #0056b3;
             color: white;
             border: none;
             padding: 12px 20px;
@@ -121,15 +115,48 @@
             width: 100%;
             transition: background 0.3s;
         }
-        button.btn-acao:hover {
-            background-color: #004085;
-        }
         button.btn-entrada {
             background-color: #28a745;
         }
         button.btn-entrada:hover {
             background-color: #218838;
         }
+        button.btn-saida {
+            background-color: #dc3545;
+        }
+        button.btn-saida:hover {
+            background-color: #c82333;
+        }
+        /* Cards do Dashboard */
+        .dash-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .metric-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-left: 5px solid #0056b3;
+        }
+        .metric-card.verde { border-left-color: #28a745; }
+        .metric-card.vermelho { border-left-color: #dc3545; }
+        .metric-card.amarelo { border-left-color: #ffc107; }
+        .metric-title {
+            font-size: 12px;
+            color: #777;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        .metric-value {
+            font-size: 26px;
+            font-weight: bold;
+            color: #0b1d3a;
+            margin-top: 5px;
+        }
+
         /* Tabelas */
         table {
             width: 100%;
@@ -154,7 +181,6 @@
         tr:hover {
             background-color: #f8f9fa;
         }
-        /* Badges de Status de Vencimento */
         .badge {
             padding: 5px 10px;
             border-radius: 4px;
@@ -167,9 +193,6 @@
         .atencao { background-color: #17a2b8; color: white; }
         .ok { background-color: #28a745; color: white; }
 
-        .search-box {
-            margin-bottom: 15px;
-        }
         .alert {
             padding: 12px;
             background-color: #d4edda;
@@ -180,11 +203,6 @@
             text-align: center;
             font-weight: bold;
         }
-        @media (max-width: 768px) {
-            .grid-2 {
-                grid-template-columns: 1fr;
-            }
-        }
     </style>
 </head>
 <body>
@@ -194,73 +212,138 @@
         <h1>Painel de Gestão - Almoxarifado Senac MT</h1>
     </header>
 
-    <!-- Menu de Abas -->
+    <!-- Menu de Abas Separadas -->
     <div class="nav-tabs">
-        <button class="active" onclick="mudarAba(event, 'tabMovimento')">Registrar Movimento</button>
-        <button onclick="mudarAba(event, 'tabConsulta')">Consulta de Estoque</button>
-        <button onclick="mudarAba(event, 'tabVencimento')">⚠️ Alertas de Vencimiento</button>
-        <button onclick="mudarAba(event, 'tabHistorico')">Histórico de Saídas/Entradas</button>
+        <button class="active" onclick="mudarAba(event, 'tabDashboard')">📊 Dashboard</button>
+        <button onclick="mudarAba(event, 'tabEntrada')">📥 Registrar Entrada</button>
+        <button onclick="mudarAba(event, 'tabSaida')">📤 Registrar Saída</button>
+        <button onclick="mudarAba(event, 'tabConsulta')">🔍 Consulta Estoque</button>
+        <button onclick="mudarAba(event, 'tabVencimento')">⚠️ Alertas de Vencimento</button>
+        <button onclick="mudarAba(event, 'tabHistorico')">📋 Histórico</button>
     </div>
 
     <div class="container">
         <div id="msgAlerta" class="alert">Operação realizada com sucesso!</div>
 
-        <!-- ABA 1: REGISTRAR MOVIMENTO -->
-        <div id="tabMovimento" class="tab-content active">
-            <div class="grid-2">
-                <!-- ENTRADA -->
-                <div class="card">
-                    <h2>📥 Registar Entrada</h2>
-                    <form id="formEntrada" onsubmit="processarMovimento(event, 'entrada')">
-                        <div class="form-group">
-                            <label for="codEntrada">Código do Item:</label>
-                            <input type="text" id="codEntrada" placeholder="Ex: 1003" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="qtdEntrada">Quantidade:</label>
-                            <input type="number" id="qtdEntrada" min="1" value="1" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="valEntrada">Validade do Lote:</label>
-                            <input type="date" id="valEntrada" required>
-                        </div>
-                        <button type="submit" class="btn-acao btn-entrada">Guardar Entrada</button>
-                    </form>
+        <!-- ABA 1: DASHBOARD DE INDICADORES -->
+        <div id="tabDashboard" class="tab-content active">
+            <div class="dash-metrics">
+                <div class="metric-card">
+                    <div class="metric-title">Total de Itens Cadastrados</div>
+                    <div class="metric-value">1.482 un</div>
                 </div>
+                <div class="metric-card verde">
+                    <div class="metric-title">Entradas no Mês</div>
+                    <div class="metric-value">+ 320 un</div>
+                </div>
+                <div class="metric-card vermelho">
+                    <div class="metric-title">Saídas no Mês</div>
+                    <div class="metric-value">- 185 un</div>
+                </div>
+                <div class="metric-card amarelo">
+                    <div class="metric-title">Itens Críticos (≤30 dias)</div>
+                    <div class="metric-value" style="color: #dc3545;">3 Lotes</div>
+                </div>
+            </div>
 
-                <!-- SAÍDA -->
-                <div class="card">
-                    <h2>📤 Registar Saída</h2>
-                    <form id="formSaida" onsubmit="processarMovimento(event, 'salida')">
-                        <div class="form-group">
-                            <label for="codSalida">Código do Item ou Bipagem:</label>
-                            <input type="text" id="codSalida" placeholder="Digite o código..." onblur="carregarValidadesDoItem()" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="selValidade">Selecione a Validade / Lote:</label>
-                            <select id="selValidade" required>
-                                <option value="">Primeiro digite o código do item...</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="qtdSalida">Quantidade:</label>
-                            <input type="number" id="qtdSalida" min="1" value="1" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="turmaSalida">Nº da Turma ou Ação Extensiva:</label>
-                            <input type="text" id="turmaSalida" placeholder="Ex: 3216515616 ou 2026.24" required>
-                        </div>
-                        <button type="submit" class="btn-acao">Finalizar Saída</button>
-                    </form>
-                </div>
+            <div class="card">
+                <h2>🚨 Produtos Mais Críticos (Vencimento Próximo)</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Produto</th>
+                            <th>Validade</th>
+                            <th>Saldo Lote</th>
+                            <th>Status de Risco</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1003</td>
+                            <td>AMOLECEDOR DE CUTICULA - 100ML</td>
+                            <td>2026-11-10</td>
+                            <td>48 un</td>
+                            <td><span class="badge critico">Crítico (28 dias)</span></td>
+                        </tr>
+                        <tr>
+                            <td>2329</td>
+                            <td>ESMALTE CINTILANTE PARA UNHAS</td>
+                            <td>2026-12-01</td>
+                            <td>15 un</td>
+                            <td><span class="badge regular">Regular (49 dias)</span></td>
+                        </tr>
+                        <tr>
+                            <td>770</td>
+                            <td>BASE PARA UNHAS</td>
+                            <td>2027-03-15</td>
+                            <td>20 un</td>
+                            <td><span class="badge atencao">Atenção (153 dias)</span></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <!-- ABA 2: CONSULTA DE ESTOQUE -->
+        <!-- ABA 2: SOMENTE ENTRADA -->
+        <div id="tabEntrada" class="tab-content">
+            <div class="card" style="max-width: 600px; margin: 0 auto;">
+                <h2>📥 Formulario de Entrada de Material</h2>
+                <form id="formEntrada" onsubmit="processarMovimento(event, 'entrada')">
+                    <div class="form-group">
+                        <label for="codEntrada">Código do Item ou Bipagem:</label>
+                        <input type="text" id="codEntrada" placeholder="Ex: 1003" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="qtdEntrada">Quantidade Entrando:</label>
+                        <input type="number" id="qtdEntrada" min="1" value="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="valEntrada">Validade do Lote:</label>
+                        <input type="date" id="valEntrada" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="motivoEntrada">Motivo / Origem da Entrada:</label>
+                        <input type="text" id="motivoEntrada" placeholder="Ex: Nota Fiscal 4589, Compra Direta, Doação..." required>
+                    </div>
+                    <button type="submit" class="btn-acao btn-entrada">Confirmar Entrada de Estoque</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ABA 3: SOMENTE SAÍDA -->
+        <div id="tabSaida" class="tab-content">
+            <div class="card" style="max-width: 600px; margin: 0 auto;">
+                <h2>📤 Formulário de Saída de Material</h2>
+                <form id="formSaida" onsubmit="processarMovimento(event, 'salida')">
+                    <div class="form-group">
+                        <label for="codSalida">Código do Item ou Bipagem:</label>
+                        <input type="text" id="codSalida" placeholder="Digite o código..." onblur="carregarValidadesDoItem()" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="selValidade">Selecione o Lote / Validade:</label>
+                        <select id="selValidade" required>
+                            <option value="">Primeiro digite o código do item...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="qtdSalida">Quantidade Baixada:</label>
+                        <input type="number" id="qtdSalida" min="1" value="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="turmaSalida">Nº da Turma / Ação Extensiva:</label>
+                        <input type="text" id="turmaSalida" placeholder="Ex: 3216515616 ou 2026.24.2026" required>
+                    </div>
+                    <button type="submit" class="btn-acao btn-saida">Confirmar Saída de Estoque</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ABA 4: CONSULTA DE ESTOQUE -->
         <div id="tabConsulta" class="tab-content">
             <div class="card">
                 <h2>🔍 Consulta Rápida de Produtos e Saldos</h2>
-                <div class="search-box">
+                <div class="form-group">
                     <input type="text" id="filtroEstoque" placeholder="Filtrar por código ou nome do produto..." onkeyup="filtrarTabelaEstoque()">
                 </div>
                 <table>
@@ -276,13 +359,13 @@
                         <tr>
                             <td>1003</td>
                             <td>AMOLECEDOR DE CUTICULA - 100ML</td>
-                            <td>2026-11-15</td>
+                            <td>2026-11-10</td>
                             <td><strong>48</strong></td>
                         </tr>
                         <tr>
                             <td>2329</td>
                             <td>ESMALTE CINTILANTE PARA UNHAS</td>
-                            <td>2026-10-25</td>
+                            <td>2026-12-01</td>
                             <td><strong>15</strong></td>
                         </tr>
                     </tbody>
@@ -290,12 +373,12 @@
             </div>
         </div>
 
-        <!-- ABA 3: ALERTAS DE VENCIMENTO -->
+        <!-- ABA 5: ALERTAS DE VENCIMENTO -->
         <div id="tabVencimento" class="tab-content">
             <div class="card">
-                <h2>⚠️ Painel de Alertas de Vencimento</h2>
+                <h2>⚠️ Painel Completo de Alertas de Vencimento</h2>
                 <p style="margin-bottom: 15px; font-size: 13px; color: #666;">
-                    Critérios: <span class="badge critico">≤ 30 dias (Crítico)</span> | 
+                    Legenda: <span class="badge critico">≤ 30 dias (Crítico)</span> | 
                     <span class="badge regular">≤ 60 dias (Regular)</span> | 
                     <span class="badge atencao">≤ 180 dias (Atenção)</span>
                 </p>
@@ -310,13 +393,13 @@
                         </tr>
                     </thead>
                     <tbody id="tabelaVencimentosCorpo">
-                        <!-- Preenchido automaticamente via script ou dados reais -->
+                        <!-- Gerado via JavaScript -->
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- ABA 4: HISTÓRICO -->
+        <!-- ABA 6: HISTÓRICO -->
         <div id="tabHistorico" class="tab-content">
             <div class="card">
                 <h2>📋 Histórico de Movimentações</h2>
@@ -325,7 +408,7 @@
                         <tr>
                             <th>Data / Hora</th>
                             <th>Tipo</th>
-                            <th>Referência / Turma</th>
+                            <th>Referência / Motivo / Turma</th>
                             <th>Código</th>
                             <th>Lote / Validade</th>
                             <th>Qtd</th>
@@ -334,10 +417,18 @@
                     <tbody id="tabelaHistoricoCorpo">
                         <tr>
                             <td>14/09/2026 14:43</td>
-                            <td><span style="color: #d9534f; font-weight: bold;">SAÍDA</span></td>
-                            <td>48321-S</td>
+                            <td><span style="color: #dc3545; font-weight: bold;">SAÍDA</span></td>
+                            <td>Turma 48321-S</td>
                             <td>2264</td>
                             <td>01/05/2028</td>
+                            <td>1</td>
+                        </tr>
+                        <tr>
+                            <td>10/09/2026 08:47</td>
+                            <td><span style="color: #28a745; font-weight: bold;">ENTRADA</span></td>
+                            <td>NF-2026MM09</td>
+                            <td>688</td>
+                            <td>abr-28</td>
                             <td>1</td>
                         </tr>
                     </tbody>
@@ -365,7 +456,7 @@
             selectValidade.innerHTML = '';
             
             const lotesExemplo = [
-                { data: "2029-11-01", saldo: 15 },
+                { data: "2026-11-10", saldo: 48 },
                 { data: "2028-05-01", saldo: 8 }
             ];
 
@@ -377,17 +468,14 @@
             });
         }
 
-        // Função que calcula os dias e define as cores (30 crítico, 60 regular, 180 atenção)
         function carregarAlertasVencimento() {
             const tbody = document.getElementById('tabelaVencimentosCorpo');
             tbody.innerHTML = '';
 
-            // Dados de exemplo (quando integrado ao Power Automate, virão do Excel)
             const itensEstoque = [
                 { cod: "1003", produto: "AMOLECEDOR DE CUTICULA - 100ML", validade: "2026-11-10" },
                 { cod: "2329", produto: "ESMALTE CINTILANTE PARA UNHAS", validade: "2026-12-01" },
-                { cod: "770", produto: "BASE PARA UNHAS", validade: "2027-03-15" },
-                { cod: "6143", produto: "PINCA MODELADORA", validade: "2050-01-01" }
+                { cod: "770", produto: "BASE PARA UNHAS", validade: "2027-03-15" }
             ];
 
             const hoje = new Date();
@@ -437,11 +525,22 @@
             event.preventDefault();
             let alerta = document.getElementById('msgAlerta');
             alerta.style.display = 'block';
-            alerta.innerText = tipo === 'entrada' ? "✅ Entrada registrada com sucesso!" : "✅ Saída registrada com sucesso!";
-            document.getElementById(tipo === 'entrada' ? 'formEntrada' : 'formSaida').reset();
+
+            if(tipo === 'entrada') {
+                const motivo = document.getElementById('motivoEntrada').value;
+                alerta.innerText = `✅ Entrada registrada com sucesso! Motivo: ${motivo}`;
+                document.getElementById('formEntrada').reset();
+            } else {
+                const turma = document.getElementById('turmaSalida').value;
+                alerta.innerText = `✅ Saída registrada com sucesso para: ${turma}`;
+                document.getElementById('formSaida').reset();
+                document.getElementById('selValidade').innerHTML = '<option value="">Primeiro digite o código do item...</option>';
+            }
+
             setTimeout(() => { alerta.style.display = 'none'; }, 6000);
         }
     </script>
 
 </body>
+</html>
 </html>
