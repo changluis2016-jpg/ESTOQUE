@@ -1,19 +1,30 @@
 document.addEventListener("DOMContentLoaded", () => {
+    // Referências dos elementos do formulário
+    const tipoAcaoSelect = document.getElementById("tipoAcao");
+    const numRequisicaoInput = document.getElementById("numRequisicao");
+    const turmaExtensaoInput = document.getElementById("turmaExtensao");
     const codigoSelect = document.getElementById("codigoSelect");
+    const quantidadeInput = document.getElementById("quantidade");
+    const validadeInput = document.getElementById("validade");
     const estoqueForm = document.getElementById("estoqueForm");
     const mensagemStatus = document.getElementById("mensagemStatus");
     const btnEnviar = document.getElementById("btnEnviar");
 
-    // Substitua pelo link RAW real do seu dados.json no GitHub
-    const urlDadosJson = "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/dados.json";
+    // 1. Link RAW oficial do seu repositório no GitHub
+    const urlDadosJson = "https://raw.githubusercontent.com/changluis2016-jpg/ESTOQUE/main/dados.json";
+
+    // 2. Cole aqui a URL do seu gatilho HTTP do Power Automate
+    const urlPowerAutomate = "COLE_AQUI_A_URL_DO_SEU_POWER_AUTOMATE";
 
     let listaProdutos = [];
 
-    // 1. Carregar produtos do cache do GitHub para consulta instantânea
+    // Carregar os produtos do arquivo JSON no GitHub
     async function carregarProdutos() {
         try {
             const resposta = await fetch(urlDadosJson);
-            if (!resposta.ok) throw new Error("Erro ao carregar dados do GitHub");
+            if (!resposta.ok) {
+                throw new Error("Não foi possível carregar o arquivo dados.json do GitHub.");
+            }
             
             listaProdutos = await resposta.json();
             
@@ -26,30 +37,30 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         } catch (erro) {
             console.error(erro);
-            codigoSelect.innerHTML = '<option value="">Erro ao carregar produtos do JSON</option>';
-            mensagemStatus.textContent = "Aviso: Não foi possível carregar o cache do GitHub.";
+            codigoSelect.innerHTML = '<option value="">Erro ao carregar produtos</option>';
+            mensagemStatus.textContent = "Erro ao carregar os dados do GitHub. Verifique o arquivo dados.json.";
             mensagemStatus.className = "status-msg erro";
         }
     }
 
     carregarProdutos();
 
-    // 2. Enviar a transação estruturada para o Power Automate
+    // Processar e enviar o formulário para o Power Automate
     estoqueForm.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        const tipoAcao = document.getElementById("tipoAcao").value;
-        const numRequisicao = document.getElementById("numRequisicao").value;
-        const turmaExtensao = document.getElementById("turmaExtensao").value;
+        const tipoAcao = tipoAcaoSelect.value;
+        const numRequisicao = numRequisicaoInput.value.trim();
+        const turmaExtensao = turmaExtensaoInput.value.trim();
         const codigoSelecionado = codigoSelect.value;
-        const quantidade = parseInt(document.getElementById("quantidade").value);
-        const validade = document.getElementById("validade").value;
+        const quantidade = parseInt(quantidadeInput.value, 10);
+        const validade = validadeInput.value;
 
-        // Localizar o ID correspondente no array carregado do GitHub
-        const produtoEncontrado = listaProdutos.find(p => p.codigo == codigoSelecionado);
-        const idProduto = produtoEncontrado ? produtoEncontrado.ID : "";
+        // Localiza o produto na lista carregada do GitHub para obter o ID
+        const produtoEncontrado = listaProdutos.find(p => String(p.codigo) === String(codigoSelecionado));
+        const idProduto = produtoEncontrado ? String(produtoEncontrado.ID) : "";
 
-        // Payload completo enviado para o Power Automate
+        // Estrutura do Payload exatamente igual ao Schema do Gatilho HTTP do Power Automate
         const payload = {
             acao: tipoAcao,
             requisicao: numRequisicao,
@@ -64,12 +75,13 @@ document.addEventListener("DOMContentLoaded", () => {
             ]
         };
 
+        // Bloqueia o botão durante o envio
         btnEnviar.disabled = true;
         btnEnviar.textContent = "Processando...";
         mensagemStatus.textContent = "";
 
         try {
-            const respostaFluxo = await fetch("SUA_URL_DO_POWER_AUTOMATE_AQUI", {
+            const respostaFluxo = await fetch(urlPowerAutomate, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -78,15 +90,15 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             if (respostaFluxo.ok) {
-                mensagemStatus.textContent = "Movimentação realizada com sucesso!";
+                mensagemStatus.textContent = "Movimentação registrada e processada com sucesso!";
                 mensagemStatus.className = "status-msg sucesso";
                 estoqueForm.reset();
             } else {
-                throw new Error("Falha ao comunicar com o fluxo.");
+                throw new Error("O fluxo do Power Automate retornou um erro.");
             }
         } catch (erro) {
             console.error(erro);
-            mensagemStatus.textContent = "Erro ao processar movimentação. Tente novamente.";
+            mensagemStatus.textContent = "Erro ao enviar a solicitação para o Power Automate.";
             mensagemStatus.className = "status-msg erro";
         } finally {
             btnEnviar.disabled = false;
