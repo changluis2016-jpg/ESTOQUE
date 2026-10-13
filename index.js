@@ -4,12 +4,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const mensagemStatus = document.getElementById("mensagemStatus");
     const btnEnviar = document.getElementById("btnEnviar");
 
-    // URL do arquivo dados.json hospedado no seu GitHub (use o link RAW do arquivo)
+    // Substitua pelo link RAW real do seu dados.json no GitHub
     const urlDadosJson = "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/dados.json";
 
     let listaProdutos = [];
 
-    // 1. Carregar dados do GitHub ao abrir a página para consulta rápida
+    // 1. Carregar produtos do cache do GitHub para consulta instantânea
     async function carregarProdutos() {
         try {
             const resposta = await fetch(urlDadosJson);
@@ -34,22 +34,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
     carregarProdutos();
 
-    // 2. Enviar a movimentação para o Power Automate em formato de array/lote
+    // 2. Enviar a transação estruturada para o Power Automate
     estoqueForm.addEventListener("submit", async (e) => {
         e.preventDefault();
 
         const tipoAcao = document.getElementById("tipoAcao").value;
+        const numRequisicao = document.getElementById("numRequisicao").value;
+        const turmaExtensao = document.getElementById("turmaExtensao").value;
         const codigoSelecionado = codigoSelect.value;
         const quantidade = parseInt(document.getElementById("quantidade").value);
         const validade = document.getElementById("validade").value;
 
-        // Encontrar o ID correspondente no array carregado
+        // Localizar o ID correspondente no array carregado do GitHub
         const produtoEncontrado = listaProdutos.find(p => p.codigo == codigoSelecionado);
         const idProduto = produtoEncontrado ? produtoEncontrado.ID : "";
 
-        // Montagem do payload compatível com o Power Automate
+        // Payload completo enviado para o Power Automate
         const payload = {
             acao: tipoAcao,
+            requisicao: numRequisicao,
+            turma: turmaExtensao,
             itens: [
                 {
                     codigo: codigoSelecionado,
@@ -89,4 +93,5 @@ document.addEventListener("DOMContentLoaded", () => {
             btnEnviar.textContent = "Processar Movimentação";
         }
     });
+});
 });
