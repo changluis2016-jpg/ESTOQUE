@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Senac MT - Controle de Estoque (Entradas e Saídas)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #f4f6f9;
+            color: #333;
+        }
+        header {
+            background-color: #0b1d3a;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        header h1 {
+            font-size: 18px;
+            letter-spacing: 0.5px;
+        }
+        .main-container {
+            max-width: 900px;
+            margin: 30px auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 0 15px;
+        }
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        h2 {
+            color: #0b1d3a;
+            margin-bottom: 15px;
+            font-size: 17px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 8px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 13px;
+            color: #555;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus {
+            border-color: #0b1d3a;
+        }
+        button {
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #004085;
+        }
+        button.btn-entrada {
+            background-color: #28a745;
+        }
+        button.btn-entrada:hover {
+            background-color: #218838;
+        }
+        .alert {
+            padding: 12px;
+            background-color: #d4edda;
+            color: #155724;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+            grid-column: span 2;
+            text-align: center;
+            font-weight: bold;
+        }
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <!-- Substitua 'logo.jpg' pelo nome exato da imagem institucional que subir para o repositório -->
+        <img src="logo.jpg" alt="Logo Senac" style="max-height: 45px; width: auto;" onerror="this.style.display='none'">
+        <h1>Painel de Estoque - Senac MT</h1>
+    </header>
+
+    <div class="main-container">
+        <div id="msgAlerta" class="alert">Operação realizada com sucesso!</div>
+
+        <!-- FORMULÁRIO DE ENTRADAS -->
+        <div class="card">
+            <h2>📥 Registar Entrada</h2>
+            <form id="formEntrada" onsubmit="processarMovimento(event, 'entrada')">
+                <div class="form-group">
+                    <label for="codEntrada">Código do Item:</label>
+                    <input type="text" id="codEntrada" placeholder="Ex: 1003" required>
+                </div>
+                <div class="form-group">
+                    <label for="qtdEntrada">Quantidade:</label>
+                    <input type="number" id="qtdEntrada" min="1" value="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="valEntrada">Validade do Lote:</label>
+                    <input type="date" id="valEntrada" required>
+                </div>
+                <button type="submit" class="btn-entrada">Guardar Entrada</button>
+            </form>
+        </div>
+
+        <!-- FORMULÁRIO DE SAÍDAS (Com seleção de Validade/Lote) -->
+        <div class="card">
+            <h2>📤 Registar Saída</h2>
+            <form id="formSaida" onsubmit="processarMovimento(event, 'salida')">
+                <div class="form-group">
+                    <label for="codSalida">Código do Item ou Bipagem:</label>
+                    <!-- Ao sair do campo ou alterar, simula a busca de validades -->
+                    <input type="text" id="codSalida" placeholder="Digite o código..." onblur="carregarValidadesDoItem()" required>
+                </div>
+                <div class="form-group">
+                    <label for="selValidade">Selecione a Validade / Lote:</label>
+                    <select id="selValidade" required>
+                        <option value="">Primeiro digite o código do item...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="qtdSalida">Quantidade:</label>
+                    <input type="number" id="qtdSalida" min="1" value="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="turmaSalida">Nº da Turma ou Ação Extensiva:</label>
+                    <input type="text" id="turmaSalida" placeholder="Ex: 3216515616 ou 2026.24" required>
+                </div>
+                <button type="submit">Finalizar Saída</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Função que simula a busca de validades cadastradas para o código digitado
+        function carregarValidadesDoItem() {
+            const codigo = document.getElementById('codSalida').value;
+            const selectValidade = document.getElementById('selValidade');
+
+            if (!codigo) return;
+
+            // Aqui no futuro você pode ligar a uma consulta AJAX na sua base ou tabela de estoque.
+            // Por enquanto, simulamos os lotes encontrados para o código:
+            selectValidade.innerHTML = '';
+            
+            // Exemplo fictício de lotes encontrados para o item:
+            const lotesExemplo = [
+                { data: "01/11/2029", saldo: 15 },
+                { data: "01/05/2028", saldo: 8 }
+            ];
+
+            lotesExemplo.forEach(lote => {
+                let opt = document.createElement('option');
+                opt.value = lote.data;
+                opt.text = `Validade: ${lote.data} (Disponível: ${lote.unidades || lote.saldo} un)`;
+                selectValidade.appendChild(opt);
+            });
+        }
+
+        async function processarMovimento(event, tipo) {
+            event.preventDefault();
+            let alerta = document.getElementById('msgAlerta');
+            alerta.style.display = 'block';
+
+            if (tipo === 'entrada') {
+                const cod = document.getElementById('codEntrada').value;
+                const qtd = document.getElementById('qtdEntrada').value;
+                const val = document.getElementById('valEntrada').value;
+
+                alerta.innerText = `✅ Entrada registada! Item ${cod}, Qtd: ${qtd} (Abas Entradas e Saldo atualizadas).`;
+                document.getElementById('formEntrada').reset();
+            } else {
+                const cod = document.getElementById('codSalida').value;
+                const val = document.getElementById('selValidade').value;
+                const qtd = document.getElementById('qtdSalida').value;
+                const turma = document.getElementById('turmaSalida').value;
+
+                alerta.innerText = `✅ Saída registada! Item ${cod}, Lote: ${val}, Qtd: ${qtd}, Turma: ${turma} (Abas Saidas e Saldo atualizadas).`;
+                document.getElementById('formSaida').reset();
+                document.getElementById('selValidade').innerHTML = '<option value="">Primeiro digite o código do item...</option>';
+            }
+
+            setTimeout(() => {
+                alerta.style.display = 'none';
+            }, 6000);
+        }
+    </script>
+
+</body>
+</html>
