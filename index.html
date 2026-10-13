@@ -212,7 +212,7 @@
         <h1>Painel de Gestão - Almoxarifado Senac MT</h1>
     </header>
 
-    <!-- Menu de Abas Separadas -->
+    <!-- Menu de Abas -->
     <div class="nav-tabs">
         <button class="active" onclick="mudarAba(event, 'tabDashboard')">📊 Dashboard</button>
         <button onclick="mudarAba(event, 'tabEntrada')">📥 Registrar Entrada</button>
@@ -288,7 +288,7 @@
         <!-- ABA 2: SOMENTE ENTRADA -->
         <div id="tabEntrada" class="tab-content">
             <div class="card" style="max-width: 600px; margin: 0 auto;">
-                <h2>📥 Formulario de Entrada de Material</h2>
+                <h2>📥 Formulário de Entrada de Material</h2>
                 <form id="formEntrada" onsubmit="processarMovimento(event, 'entrada')">
                     <div class="form-group">
                         <label for="codEntrada">Código do Item ou Bipagem:</label>
@@ -423,14 +423,6 @@
                             <td>01/05/2028</td>
                             <td>1</td>
                         </tr>
-                        <tr>
-                            <td>10/09/2026 08:47</td>
-                            <td><span style="color: #28a745; font-weight: bold;">ENTRADA</span></td>
-                            <td>NF-2026MM09</td>
-                            <td>688</td>
-                            <td>abr-28</td>
-                            <td>1</td>
-                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -438,6 +430,9 @@
     </div>
 
     <script>
+        // URL da API do Power Automate configurada
+        const POWER_AUTOMATE_URL = "https://default554116b687be480a9e3aa0e9e1a653.4b.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/02/workflows/53a06847ff1a435baa429b1692cfc84f/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=6J_jbnw0N4Ji2DKpAYDQEhNjpGpNRYUdKmueyuuXmrs";
+
         function mudarAba(evt, idAba) {
             const conteudos = document.getElementsByClassName('tab-content');
             for (let i = 0; i < conteudos.length; i++) conteudos[i].classList.remove('active');
@@ -521,20 +516,64 @@
             });
         }
 
-        function processarMovimento(event, tipo) {
+        // Função que envia os dados para o Power Automate via API HTTP
+        async function processarMovimento(event, tipo) {
             event.preventDefault();
             let alerta = document.getElementById('msgAlerta');
-            alerta.style.display = 'block';
+            
+            let dadosEnvio = {};
 
             if(tipo === 'entrada') {
-                const motivo = document.getElementById('motivoEntrada').value;
-                alerta.innerText = `✅ Entrada registrada com sucesso! Motivo: ${motivo}`;
-                document.getElementById('formEntrada').reset();
+                dadosEnvio = {
+                    acao: "entrada",
+                    codigo: document.getElementById('codEntrada').value,
+                    quantidade: parseInt(document.getElementById('qtdEntrada').value),
+                    validade: document.getElementById('valEntrada').value,
+                    motivo_turma: document.getElementById('motivoEntrada').value
+                };
             } else {
-                const turma = document.getElementById('turmaSalida').value;
-                alerta.innerText = `✅ Saída registrada com sucesso para: ${turma}`;
-                document.getElementById('formSaida').reset();
-                document.getElementById('selValidade').innerHTML = '<option value="">Primeiro digite o código do item...</option>';
+                dadosEnvio = {
+                    acao: "saida",
+                    codigo: document.getElementById('codSalida').value,
+                    quantidade: parseInt(document.getElementById('qtdSalida').value),
+                    validade: document.getElementById('selValidade').value,
+                    motivo_turma: document.getElementById('turmaSalida').value
+                };
+            }
+
+            alerta.style.display = 'block';
+            alerta.style.backgroundColor = '#d1ecf1';
+            alerta.style.color = '#0c5460';
+            alerta.innerText = "⏳ A processar e enviar para o Excel...";
+
+            try {
+                const resposta = await fetch(POWER_AUTOMATE_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(dadosEnvio)
+                });
+
+                if (resposta.ok) {
+                    alerta.style.backgroundColor = '#d4edda';
+                    alerta.style.color = '#155724';
+                    alerta.innerText = tipo === 'entrada' ? "✅ Entrada registrada com sucesso no Excel!" : "✅ Saída registrada com sucesso no Excel!";
+                    
+                    if(tipo === 'entrada') {
+                        document.getElementById('formEntrada').reset();
+                    } else {
+                        document.getElementById('formSaida').reset();
+                        document.getElementById('selValidade').innerHTML = '<option value="">Primeiro digite o código do item...</option>';
+                    }
+                } else {
+                    throw new Error("Erro na resposta do servidor.");
+                }
+            } catch (erro) {
+                alerta.style.backgroundColor = '#f8d7da';
+                alerta.style.color = '#721c24';
+                alerta.innerText = "❌ Erro ao comunicar com o Power Automate. Tente novamente.";
+                console.error(erro);
             }
 
             setTimeout(() => { alerta.style.display = 'none'; }, 6000);
@@ -542,5 +581,4 @@
     </script>
 
 </body>
-</html>
 </html>
