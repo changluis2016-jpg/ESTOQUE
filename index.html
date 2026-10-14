@@ -3,146 +3,231 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Entrada de Material - Controle de Estoque</title>
+    <title>Controle de Estoque - SENAC Cuiabá</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f4f6f9; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-        .container { background: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
-        h2 { color: #1e3a8a; text-align: center; margin-bottom: 5px; }
-        .subtitle { text-align: center; color: #6b7280; font-size: 14px; margin-bottom: 25px; }
+        body { background-color: #f4f6f9; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 30px; }
+        .container { background: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 650px; }
+        h1 { color: #1e3a8a; text-align: center; margin-bottom: 5px; font-size: 22px; }
+        .subtitle { text-align: center; color: #6b7280; font-size: 14px; margin-bottom: 20px; }
+        
+        /* Abas de Navegação */
+        .tabs { display: flex; justify-content: space-between; margin-bottom: 25px; border-bottom: 2px solid #e5e7eb; }
+        .tab-btn { background: none; border: none; padding: 10px 15px; font-size: 15px; font-weight: 600; color: #6b7280; cursor: pointer; flex: 1; text-align: center; transition: all 0.2s; }
+        .tab-btn.active { color: #1e3a8a; border-bottom: 3px solid #1e3a8a; margin-bottom: -2px; }
+        
+        /* Conteúdo das Abas */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
         .form-group { margin-bottom: 15px; }
         label { display: block; font-weight: 600; color: #374151; margin-bottom: 5px; font-size: 14px; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; outline: none; transition: border-color 0.2s; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; outline: none; }
         input:focus, select:focus { border-color: #2563eb; }
-        button { width: 100%; background-color: #16a34a; color: white; border: none; padding: 12px; font-size: 16px; font-weight: 600; border-radius: 6px; cursor: pointer; transition: background-color 0.2s; margin-top: 10px; }
-        button:hover { background-color: #15803d; }
-        button:disabled { background-color: #9ca3af; cursor: not-allowed; }
-        .back-link { display: block; text-align: center; margin-top: 15px; color: #2563eb; text-decoration: none; font-size: 14px; }
-        .back-link:hover { text-decoration: underline; }
+        
+        .btn { width: 100%; border: none; padding: 12px; font-size: 16px; font-weight: 600; border-radius: 6px; cursor: pointer; color: white; margin-top: 10px; transition: background-color 0.2s; }
+        .btn-entrada { background-color: #16a34a; }
+        .btn-entrada:hover { background-color: #15803d; }
+        .btn-saida { background-color: #dc2626; }
+        .btn-saida:hover { background-color: #b91c1c; }
+        
         .status-msg { margin-top: 15px; text-align: center; font-weight: 600; font-size: 14px; }
         .status-msg.sucesso { color: #16a34a; }
         .status-msg.erro { color: #dc2626; }
+
+        /* Tabela de Validades */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+        th { background-color: #f8fafc; color: #374151; }
+        .badge-alerta { background-color: #fef2f2; color: #dc2626; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; }
+        .badge-ok { background-color: #f0fdf4; color: #16a34a; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Registrar Entrada</h2>
+    <h1>Controle de Estoque</h1>
     <p class="subtitle">SENAC - Cuiabá</p>
 
-    <form id="entradaForm">
-        <div class="form-group">
-            <label for="numRequisicao">Nº da Requisição / Documento:</label>
-            <input type="text" id="numRequisicao" required placeholder="Ex: NF-12345">
-        </div>
+    <!-- Menu de Abas -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="mudarAba('entrada')">🟢 Entrada</button>
+        <button class="tab-btn" onclick="mudarAba('saida')">🔴 Saída</button>
+        <button class="tab-btn" onclick="mudarAba('validades')">⚠️ Validades Próximas</button>
+    </div>
 
-        <div class="form-group">
-            <label for="turmaExtensao">Turma / Extensão / Setor / Fornecedor:</label>
-            <input type="text" id="turmaExtensao" required placeholder="Ex: Fornecedor X ou Setor Y">
-        </div>
+    <!-- ABA 1: ENTRADA -->
+    <div id="aba-entrada" class="tab-content active">
+        <form id="entradaForm">
+            <div class="form-group">
+                <label>Nº da Requisição / Documento:</label>
+                <input type="text" id="entRequisicao" required placeholder="Ex: NF-123">
+            </div>
+            <div class="form-group">
+                <label>Fornecedor / Setor:</label>
+                <input type="text" id="entTurma" required placeholder="Ex: Fornecedor ABC">
+            </div>
+            <div class="form-group">
+                <label>Selecione o Produto:</label>
+                <select id="entCodigoSelect" required>
+                    <option value="">Carregando produtos...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Quantidade:</label>
+                <input type="number" id="entQuantidade" min="1" required placeholder="Ex: 10">
+            </div>
+            <div class="form-group">
+                <label>Validade:</label>
+                <input type="date" id="entValidade" required>
+            </div>
+            <button type="submit" class="btn btn-entrada" id="btnEntrada">Processar Entrada</button>
+        </form>
+        <div id="statusEntrada" class="status-msg"></div>
+    </div>
 
-        <div class="form-group">
-            <label for="codigoSelect">Selecione ou Informe o Produto:</label>
-            <select id="codigoSelect" required>
-                <option value="">Carregando produtos do GitHub...</option>
-            </select>
-        </div>
+    <!-- ABA 2: SAÍDA -->
+    <div id="aba-saida" class="tab-content">
+        <form id="saidaForm">
+            <div class="form-group">
+                <label>Nº da Requisição / Documento:</label>
+                <input type="text" id="saiRequisicao" required placeholder="Ex: REQ-456">
+            </div>
+            <div class="form-group">
+                <label>Turma / Extensão / Setor:</label>
+                <input type="text" id="saiTurma" required placeholder="Ex: Turma de Enfermagem">
+            </div>
+            <div class="form-group">
+                <label>Selecione o Produto:</label>
+                <select id="saiCodigoSelect" required>
+                    <option value="">Carregando produtos...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Quantidade:</label>
+                <input type="number" id="saiQuantidade" min="1" required placeholder="Ex: 2">
+            </div>
+            <button type="submit" class="btn btn-saida" id="btnSaida">Processar Saída</button>
+        </form>
+        <div id="statusSaida" class="status-msg"></div>
+    </div>
 
-        <div class="form-group">
-            <label for="quantidade">Quantidade:</label>
-            <input type="number" id="quantidade" min="1" required placeholder="Ex: 10">
-        </div>
-
-        <div class="form-group">
-            <label for="validade">Validade:</label>
-            <input type="date" id="validade" required>
-        </div>
-
-        <button type="submit" id="btnEnviar">Processar Entrada</button>
-    </form>
-
-    <a href="index.html" class="back-link">← Voltar ao Menu Principal</a>
-    <div id="mensagemStatus"></div>
+    <!-- ABA 3: VALIDADES PRÓXIMAS -->
+    <div id="aba-validades" class="tab-content">
+        <h3 style="margin-bottom: 15px; color: #374151; font-size: 16px;">Monitoramento de Vencimentos</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Produto</th>
+                    <th>Saldo</th>
+                    <th>Validade</th>
+                    <th>Status</th>
+                </tr>
+            heiz</thead>
+            <tbody id="tabelaValidades">
+                <tr><td colspan="5" style="text-align: center;">Carregando dados...</td></tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const urlDadosJson = "https://raw.githubusercontent.com/changluis2016-jpg/ESTOQUE/main/dados.json";
-        // Insira abaixo a URL do Power Automate específica para Entrada (ou a mesma com a flag de entrada)
-        const urlPowerAutomate = "COLE_AQUI_A_URL_DO_POWER_AUTOMATE_ENTRADA";
+    const urlDadosJson = "https://raw.githubusercontent.com/changluis2016-jpg/ESTOQUE/main/dados.json";
+    const urlPowerAutomate = "COLE_AQUI_A_URL_DO_POWER_AUTOMATE"; // Ajuste conforme necessário
 
-        const codigoSelect = document.getElementById("codigoSelect");
-        const entradaForm = document.getElementById("entradaForm");
-        const mensagemStatus = document.getElementById("mensagemStatus");
-        const btnEnviar = document.getElementById("btnEnviar");
+    let listaProdutos = [];
 
-        let listaProdutos = [];
+    // Alternar entre abas
+    function mudarAba(aba) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
 
-        async function carregarProdutos() {
-            try {
-                const resposta = await fetch(urlDadosJson);
-                if (!resposta.ok) throw new Error("Erro ao carregar dados.json");
-                listaProdutos = await resposta.json();
+        if (aba === 'entrada') {
+            document.getElementById('aba-entrada').classList.add('active');
+            event.currentTarget.classList.add('active');
+        } else if (aba === 'saida') {
+            document.getElementById('aba-saida').classList.add('active');
+            event.currentTarget.classList.add('active');
+        } else if (aba === 'validades') {
+            document.getElementById('aba-validades').classList.add('active');
+            event.currentTarget.classList.add('active');
+            renderizarValidades();
+        }
+    }
+
+    // Carregar dados do GitHub para selects e tabela
+    async function carregarDados() {
+        try {
+            const resposta = await fetch(urlDadosJson);
+            if (!resposta.ok) throw new Error("Erro ao carregar dados.");
+            listaProdutos = await resposta.json();
+
+            const selectEntrada = document.getElementById("entCodigoSelect");
+            const selectSaida = document.getElementById("saiCodigoSelect");
+
+            selectEntrada.innerHTML = '<option value="">Selecione um produto...</option>';
+            selectSaida.innerHTML = '<option value="">Selecione um produto...</option>';
+
+            listaProdutos.forEach(prod => {
+                const optText = `${prod.codigo} - ${prod.nome || 'Produto'} (Saldo: ${prod["saldo atual"] || 0})`;
                 
-                codigoSelect.innerHTML = '<option value="">Selecione um produto existente ou informe novo...</option>';
-                listaProdutos.forEach(prod => {
-                    const option = document.createElement("option");
-                    option.value = prod.codigo;
-                    option.textContent = `${prod.codigo} - ${prod.nome || 'Produto'} (Saldo: ${prod["saldo atual"] || 0})`;
-                    codigoSelect.appendChild(option);
-                });
-            } catch (erro) {
-                console.error(erro);
-                codigoSelect.innerHTML = '<option value="">Erro ao carregar produtos</option>';
-            }
+                const opt1 = document.createElement("option");
+                opt1.value = prod.codigo;
+                opt1.textContent = optText;
+                selectEntrada.appendChild(opt1);
+
+                const opt2 = document.createElement("option");
+                opt2.value = prod.codigo;
+                opt2.textContent = optText;
+                selectSaida.appendChild(opt2);
+            });
+        } catch (erro) {
+            console.error(erro);
+        }
+    }
+
+    // Renderizar tabela de validades próximas
+    function renderizarValidades() {
+        const tbody = document.getElementById("tabelaValidades");
+        tbody.innerHTML = "";
+
+        if (listaProdutos.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum produto encontrado.</td></tr>';
+            return;
         }
 
-        carregarProdutos();
+        const hoje = new Date();
 
-        entradaForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
+        listaProdutos.forEach(prod => {
+            const tr = document.createElement("tr");
+            const dataValidadeStr = prod.validade || "-";
+            
+            let statusBadge = '<span class="badge-ok">No Prazo</span>';
+            
+            if (dataValidadeStr !== "-") {
+                const dataVal = new Date(dataValidadeStr);
+                const diffTime = dataVal - hoje;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-            const payload = {
-                acao: "entrada",
-                requisicao: document.getElementById("numRequisicao").value.trim(),
-                turma: document.getElementById("turmaExtensao").value.trim(),
-                itens: [
-                    {
-                        codigo: codigoSelect.value,
-                        quantidade: parseInt(document.getElementById("quantidade").value, 10),
-                        validade: document.getElementById("validade").value
-                    }
-                ]
-            };
-
-            btnEnviar.disabled = true;
-            btnEnviar.textContent = "Processando...";
-            mensagemStatus.textContent = "";
-
-            try {
-                const respostaFluxo = await fetch(urlPowerAutomate, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
-                });
-
-                if (respostaFluxo.ok) {
-                    mensagemStatus.textContent = "Entrada registrada com sucesso!";
-                    mensagemStatus.className = "status-msg sucesso";
-                    entradaForm.reset();
-                } else {
-                    throw new Error("Erro no fluxo.");
+                if (diffDays <= 30) {
+                    statusBadge = '<span class="badge-alerta">Vence em ' + diffDays + ' dias</span>';
                 }
-            } catch (erro) {
-                console.error(erro);
-                mensagemStatus.textContent = "Erro ao enviar a solicitação.";
-                mensagemStatus.className = "status-msg erro";
-            } finally {
-                btnEnviar.disabled = false;
-                btnEnviar.textContent = "Processar Entrada";
             }
+
+            tr.innerHTML = `
+                <td>${prod.codigo}</td>
+                <td>${prod.nome || '-'}</td>
+                <td>${prod["saldo atual"] || 0}</td>
+                <td>${dataValidadeStr}</td>
+                <td>${statusBadge}</td>
+            `;
+            tbody.appendChild(tr);
         });
-    });
+    }
+
+    // Inicializar carregamento
+    carregarDados();
 </script>
 
 </body>
