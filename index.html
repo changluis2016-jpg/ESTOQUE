@@ -7,13 +7,13 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #f4f6f9; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 30px; }
-        .container { background: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 650px; }
+        .container { background: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 800px; }
         h1 { color: #1e3a8a; text-align: center; margin-bottom: 5px; font-size: 22px; }
         .subtitle { text-align: center; color: #6b7280; font-size: 14px; margin-bottom: 20px; }
         
         /* Abas de Navegação */
-        .tabs { display: flex; justify-content: space-between; margin-bottom: 25px; border-bottom: 2px solid #e5e7eb; }
-        .tab-btn { background: none; border: none; padding: 10px 15px; font-size: 15px; font-weight: 600; color: #6b7280; cursor: pointer; flex: 1; text-align: center; transition: all 0.2s; }
+        .tabs { display: flex; justify-content: space-between; margin-bottom: 25px; border-bottom: 2px solid #e5e7eb; flex-wrap: wrap; gap: 5px; }
+        .tab-btn { background: none; border: none; padding: 10px 12px; font-size: 14px; font-weight: 600; color: #6b7280; cursor: pointer; flex: 1; text-align: center; transition: all 0.2s; min-width: 120px; }
         .tab-btn.active { color: #1e3a8a; border-bottom: 3px solid #1e3a8a; margin-bottom: -2px; }
         
         /* Conteúdo das Abas */
@@ -30,17 +30,19 @@
         .btn-entrada:hover { background-color: #15803d; }
         .btn-saida { background-color: #dc2626; }
         .btn-saida:hover { background-color: #b91c1c; }
+        .btn-consulta { background-color: #2563eb; }
+        .btn-consulta:hover { background-color: #1d4ed8; }
         
         .status-msg { margin-top: 15px; text-align: center; font-weight: 600; font-size: 14px; }
         .status-msg.sucesso { color: #16a34a; }
         .status-msg.erro { color: #dc2626; }
 
-        /* Tabela de Validades */
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        /* Tabelas */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e5e7eb; }
         th { background-color: #f8fafc; color: #374151; }
-        .badge-alerta { background-color: #fef2f2; color: #dc2626; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; }
-        .badge-ok { background-color: #f0fdf4; color: #16a34a; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; }
+        .badge-alerta { background-color: #fef2f2; color: #dc2626; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; }
+        .badge-ok { background-color: #f0fdf4; color: #16a34a; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; }
     </style>
 </head>
 <body>
@@ -51,9 +53,10 @@
 
     <!-- Menu de Abas -->
     <div class="tabs">
-        <button class="tab-btn active" onclick="mudarAba('entrada')">🟢 Entrada</button>
-        <button class="tab-btn" onclick="mudarAba('saida')">🔴 Saída</button>
-        <button class="tab-btn" onclick="mudarAba('validades')">⚠️ Validades Próximas</button>
+        <button class="tab-btn active" onclick="mudarAba('entrada', event)">🟢 Entrada</button>
+        <button class="tab-btn" onclick="mudarAba('saida', event)">🔴 Saída</button>
+        <button class="tab-btn" onclick="mudarAba('consulta', event)">🔍 Consultar</button>
+        <button class="tab-btn" onclick="mudarAba('validades', event)">⚠️ Validades</button>
     </div>
 
     <!-- ABA 1: ENTRADA -->
@@ -112,56 +115,87 @@
         <div id="statusSaida" class="status-msg"></div>
     </div>
 
-    <!-- ABA 3: VALIDADES PRÓXIMAS -->
+    <!-- ABA 3: CONSULTA DE PRODUTO -->
+    <div id="aba-consulta" class="tab-content">
+        <div class="form-group">
+            <label>Pesquisar por Código ou Descrição do Produto:</label>
+            <input type="text" id="inputBusca" placeholder="Digite o código (ex: 1003) ou parte do nome..." onkeyup="pesquisarProdutos()">
+        </div>
+        <div style="max-height: 400px; overflow-y: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cód</th>
+                        <th>Produto</th>
+                        <th>Categoria</th>
+                        <th>Tipo</th>
+                        <th>Saldo</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaConsulta">
+                    <tr><td colspan="5" style="text-align: center;">Digite acima para pesquisar ou aguarde o carregamento...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ABA 4: VALIDADES PRÓXIMAS -->
     <div id="aba-validades" class="tab-content">
         <h3 style="margin-bottom: 15px; color: #374151; font-size: 16px;">Monitoramento de Vencimentos</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Código</th>
-                    <th>Produto</th>
-                    <th>Saldo</th>
-                    <th>Validade</th>
-                    <th>Status</th>
-                </tr>
-            heiz</thead>
-            <tbody id="tabelaValidades">
-                <tr><td colspan="5" style="text-align: center;">Carregando dados...</td></tr>
-            </tbody>
-        </table>
+        <div style="max-height: 400px; overflow-y: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cód</th>
+                        <th>Produto</th>
+                        <th>Saldo</th>
+                        <th>Dias p/ Vencer</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaValidades">
+                    <tr><td colspan="5" style="text-align: center;">Carregando dados...</td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <script>
     const urlDadosJson = "https://raw.githubusercontent.com/changluis2016-jpg/ESTOQUE/main/dados.json";
-    const urlPowerAutomate = "COLE_AQUI_A_URL_DO_POWER_AUTOMATE"; // Ajuste conforme necessário
+    const urlPowerAutomateEntrada = "COLE_AQUI_A_URL_DO_POWER_AUTOMATE_ENTRADA";
+    const urlPowerAutomateSaida = "COLE_AQUI_A_URL_DO_POWER_AUTOMATE_SAIDA";
 
     let listaProdutos = [];
 
-    // Alternar entre abas
-    function mudarAba(aba) {
+    function mudarAba(aba, evt) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
 
         if (aba === 'entrada') {
             document.getElementById('aba-entrada').classList.add('active');
-            event.currentTarget.classList.add('active');
+            evt.currentTarget.classList.add('active');
         } else if (aba === 'saida') {
             document.getElementById('aba-saida').classList.add('active');
-            event.currentTarget.classList.add('active');
+            evt.currentTarget.classList.add('active');
+        } else if (aba === 'consulta') {
+            document.getElementById('aba-consulta').classList.add('active');
+            evt.currentTarget.classList.add('active');
+            pesquisarProdutos(); // Exibe todos inicialmente
         } else if (aba === 'validades') {
             document.getElementById('aba-validades').classList.add('active');
-            event.currentTarget.classList.add('active');
+            evt.currentTarget.classList.add('active');
             renderizarValidades();
         }
     }
 
-    // Carregar dados do GitHub para selects e tabela
     async function carregarDados() {
         try {
             const resposta = await fetch(urlDadosJson);
             if (!resposta.ok) throw new Error("Erro ao carregar dados.");
-            listaProdutos = await resposta.json();
+            const dadosBrutos = await resposta.json();
+            
+            listaProdutos = dadosBrutos.ESTOQUE || dadosBrutos;
 
             const selectEntrada = document.getElementById("entCodigoSelect");
             const selectSaida = document.getElementById("saiCodigoSelect");
@@ -170,63 +204,169 @@
             selectSaida.innerHTML = '<option value="">Selecione um produto...</option>';
 
             listaProdutos.forEach(prod => {
-                const optText = `${prod.codigo} - ${prod.nome || 'Produto'} (Saldo: ${prod["saldo atual"] || 0})`;
+                const optText = `${prod.cod} - ${prod.produto || 'Produto'} (Saldo: ${prod["saldo atual"] || 0})`;
                 
                 const opt1 = document.createElement("option");
-                opt1.value = prod.codigo;
+                opt1.value = prod.cod;
                 opt1.textContent = optText;
                 selectEntrada.appendChild(opt1);
 
                 const opt2 = document.createElement("option");
-                opt2.value = prod.codigo;
+                opt2.value = prod.cod;
                 opt2.textContent = optText;
                 selectSaida.appendChild(opt2);
             });
         } catch (erro) {
             console.error(erro);
+            document.getElementById("entCodigoSelect").innerHTML = '<option value="">Erro ao carregar dados</option>';
+            document.getElementById("saiCodigoSelect").innerHTML = '<option value="">Erro ao carregar dados</option>';
         }
     }
 
-    // Renderizar tabela de validades próximas
-    function renderizarValidades() {
-        const tbody = document.getElementById("tabelaValidades");
+    // Função de Pesquisa Instantânea por Código ou Descrição
+    function pesquisarProdutos() {
+        const termo = document.getElementById("inputBusca").value.toLowerCase().trim();
+        const tbody = document.getElementById("tabelaConsulta");
         tbody.innerHTML = "";
 
-        if (listaProdutos.length === 0) {
+        const filtrados = listaProdutos.filter(prod => {
+            const codStr = String(prod.cod || "").toLowerCase();
+            const prodStr = String(prod.produto || "").toLowerCase();
+            return codStr.includes(termo) || prodStr.includes(termo);
+        });
+
+        if (filtrados.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum produto encontrado.</td></tr>';
             return;
         }
 
-        const hoje = new Date();
-
-        listaProdutos.forEach(prod => {
+        filtrados.forEach(prod => {
             const tr = document.createElement("tr");
-            const dataValidadeStr = prod.validade || "-";
-            
-            let statusBadge = '<span class="badge-ok">No Prazo</span>';
-            
-            if (dataValidadeStr !== "-") {
-                const dataVal = new Date(dataValidadeStr);
-                const diffTime = dataVal - hoje;
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                if (diffDays <= 30) {
-                    statusBadge = '<span class="badge-alerta">Vence em ' + diffDays + ' dias</span>';
-                }
-            }
-
             tr.innerHTML = `
-                <td>${prod.codigo}</td>
-                <td>${prod.nome || '-'}</td>
-                <td>${prod["saldo atual"] || 0}</td>
-                <td>${dataValidadeStr}</td>
-                <td>${statusBadge}</td>
+                <td><b>${prod.cod}</b></td>
+                <td>${prod.produto || '-'}</td>
+                <td>${prod.Categoria || '-'}</td>
+                <td>${prod.TIPO || '-'}</td>
+                <td><b>${prod["saldo atual"] || 0}</b></td>
             `;
             tbody.appendChild(tr);
         });
     }
 
-    // Inicializar carregamento
+    function renderizarValidades() {
+        const tbody = document.getElementById("tabelaValidades");
+        tbody.innerHTML = "";
+
+        if (!listaProdutos || listaProdutos.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum produto encontrado.</td></tr>';
+            return;
+        }
+
+        listaProdutos.forEach(prod => {
+            const tr = document.createElement("tr");
+            const diasVencer = prod["Dias p/ Vencer"] !== undefined ? parseInt(prod["Dias p/ Vencer"], 10) : 999;
+            const statusValidade = prod["Status Validade"] || "☑️ OK";
+            
+            let badge = `<span class="badge-ok">${statusValidade}</span>`;
+            if (diasVencer <= 30 && diasVencer >= 0) {
+                badge = `<span class="badge-alerta">Vence em ${diasVencer} dias</span>`;
+            } else if (diasVencer < 0) {
+                badge = `<span class="badge-alerta">Vencido</span>`;
+            }
+
+            tr.innerHTML = `
+                <td>${prod.cod}</td>
+                <td>${prod.produto || '-'}</td>
+                <td>${prod["saldo atual"] || 0}</td>
+                <td>${diasVencer} dias</td>
+                <td>${badge}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // Envio Entrada
+    document.getElementById("entradaForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById("btnEntrada");
+        const status = document.getElementById("statusEntrada");
+
+        const payload = {
+            acao: "entrada",
+            requisicao: document.getElementById("entRequisicao").value.trim(),
+            turma: document.getElementById("entTurma").value.trim(),
+            itens: [{
+                codigo: document.getElementById("entCodigoSelect").value,
+                quantidade: parseInt(document.getElementById("entQuantidade").value, 10),
+                validade: document.getElementById("entValidade").value
+            }]
+        };
+
+        btn.disabled = true;
+        btn.textContent = "Processando...";
+        status.textContent = "";
+
+        try {
+            const res = await fetch(urlPowerAutomateEntrada, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                status.textContent = "Entrada registrada com sucesso!";
+                status.className = "status-msg sucesso";
+                document.getElementById("entradaForm").reset();
+            } else { throw new Error(); }
+        } catch {
+            status.textContent = "Erro ao registrar entrada.";
+            status.className = "status-msg erro";
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Processar Entrada";
+        }
+    });
+
+    // Envio Saída
+    document.getElementById("saidaForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById("btnSaida");
+        const status = document.getElementById("statusSaida");
+
+        const payload = {
+            acao: "saida",
+            requisicao: document.getElementById("saiRequisicao").value.trim(),
+            turma: document.getElementById("saiTurma").value.trim(),
+            itens: [{
+                codigo: document.getElementById("saiCodigoSelect").value,
+                quantidade: parseInt(document.getElementById("saiQuantidade").value, 10),
+                validade: "2026-12-31"
+            }]
+        };
+
+        btn.disabled = true;
+        btn.textContent = "Processando...";
+        status.textContent = "";
+
+        try {
+            const res = await fetch(urlPowerAutomateSaida, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                status.textContent = "Saída registrada com sucesso!";
+                status.className = "status-msg sucesso";
+                document.getElementById("saidaForm").reset();
+            } else { throw new Error(); }
+        } catch {
+            status.textContent = "Erro ao registrar saída.";
+            status.className = "status-msg erro";
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Processar Saída";
+        }
+    });
+
     carregarDados();
 </script>
 
