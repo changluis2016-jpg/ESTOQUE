@@ -1,0 +1,16 @@
+[
+  {
+    "codigo": "101",
+    "nome": "PAPEL A4 UN",
+    "saldo atual": 50,
+    "validade": "2026-12-31",
+    "ID": 1
+  },
+  {
+    "codigo": "102",
+    "nome": "CANETA AZUL UN",
+    "saldo atual": 100,
+    "validade": "2026-12-31",
+    "ID": 2
+  }
+]
