@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // Referências dos elementos do formulário
     const tipoAcaoSelect = document.getElementById("tipoAcao");
     const numRequisicaoInput = document.getElementById("numRequisicao");
     const turmaExtensaoInput = document.getElementById("turmaExtensao");
@@ -10,42 +9,37 @@ document.addEventListener("DOMContentLoaded", () => {
     const mensagemStatus = document.getElementById("mensagemStatus");
     const btnEnviar = document.getElementById("btnEnviar");
 
-    // 1. Link RAW oficial do seu repositório no GitHub
     const urlDadosJson = "https://raw.githubusercontent.com/changluis2016-jpg/ESTOQUE/main/dados.json";
-
-    // 2. Cole aqui a URL do seu gatilho HTTP do Power Automate
     const urlPowerAutomate = "COLE_AQUI_A_URL_DO_SEU_POWER_AUTOMATE";
 
     let listaProdutos = [];
 
-    // Carregar os produtos do arquivo JSON no GitHub
     async function carregarProdutos() {
         try {
             const resposta = await fetch(urlDadosJson);
             if (!resposta.ok) {
-                throw new Error("Não foi possível carregar o arquivo dados.json do GitHub.");
+                throw new Error("Non potuit carregar dados.json.");
             }
             
             listaProdutos = await resposta.json();
             
-            codigoSelect.innerHTML = '<option value="">Selecione um produto...</option>';
+            codigoSelect.innerHTML = '<option value="">Elige un producto...</option>';
             listaProdutos.forEach(prod => {
                 const option = document.createElement("option");
                 option.value = prod.codigo;
-                option.textContent = `${prod.codigo} - ${prod.nome || 'Produto'} (Saldo: ${prod.saldo_atual || 0})`;
+                option.textContent = `${prod.codigo} - ${prod.nome || 'Productum'} (Saldo: ${prod["saldo atual"] || 0})`;
                 codigoSelect.appendChild(option);
             });
         } catch (erro) {
             console.error(erro);
-            codigoSelect.innerHTML = '<option value="">Erro ao carregar produtos</option>';
-            mensagemStatus.textContent = "Erro ao carregar os dados do GitHub. Verifique o arquivo dados.json.";
+            codigoSelect.innerHTML = '<option value="">Error in carregar</option>';
+            mensagemStatus.textContent = "Error carring data from GitHub.";
             mensagemStatus.className = "status-msg erro";
         }
     }
 
     carregarProdutos();
 
-    // Processar e enviar o formulário para o Power Automate
     estoqueForm.addEventListener("submit", async (e) => {
         e.preventDefault();
 
@@ -56,11 +50,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const quantidade = parseInt(quantidadeInput.value, 10);
         const validade = validadeInput.value;
 
-        // Localiza o produto na lista carregada do GitHub para obter o ID
         const produtoEncontrado = listaProdutos.find(p => String(p.codigo) === String(codigoSelecionado));
         const idProduto = produtoEncontrado ? String(produtoEncontrado.ID) : "";
 
-        // Estrutura do Payload exatamente igual ao Schema do Gatilho HTTP do Power Automate
         const payload = {
             acao: tipoAcao,
             requisicao: numRequisicao,
@@ -75,7 +67,6 @@ document.addEventListener("DOMContentLoaded", () => {
             ]
         };
 
-        // Bloqueia o botão durante o envio
         btnEnviar.disabled = true;
         btnEnviar.textContent = "Processando...";
         mensagemStatus.textContent = "";
@@ -90,20 +81,19 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             if (respostaFluxo.ok) {
-                mensagemStatus.textContent = "Movimentação registrada e processada com sucesso!";
+                mensagemStatus.textContent = "Movimentação registrada com sucesso!";
                 mensagemStatus.className = "status-msg sucesso";
                 estoqueForm.reset();
             } else {
-                throw new Error("O fluxo do Power Automate retornou um erro.");
+                throw new Error("Power Automate error.");
             }
         } catch (erro) {
             console.error(erro);
-            mensagemStatus.textContent = "Erro ao enviar a solicitação para o Power Automate.";
+            mensagemStatus.textContent = "Error in sending request.";
             mensagemStatus.className = "status-msg erro";
         } finally {
             btnEnviar.disabled = false;
             btnEnviar.textContent = "Processar Movimentação";
         }
     });
-});
 });
