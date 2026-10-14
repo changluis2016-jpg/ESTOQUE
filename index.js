@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnEnviar = document.getElementById("btnEnviar");
 
     const urlDadosJson = "https://raw.githubusercontent.com/changluis2016-jpg/ESTOQUE/main/dados.json";
-    const urlPowerAutomate = "COLE_AQUI_A_URL_DO_SEU_POWER_AUTOMATE";
+    const urlPowerAutomate = "https://default554116b687be480a9e3aa0e9e1a653.4b.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/02/workflows/53a06847ff1a435baa429b1692cfc84f/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=6J_jbnw0N4Ji2DKpAYDQEhNjpGpNRYUdKmueyuuXmrs";
 
     let listaProdutos = [];
 
@@ -18,22 +18,22 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const resposta = await fetch(urlDadosJson);
             if (!resposta.ok) {
-                throw new Error("Non potuit carregar dados.json.");
+                throw new Error("Não foi possível carregar dados.json.");
             }
             
             listaProdutos = await resposta.json();
             
-            codigoSelect.innerHTML = '<option value="">Elige un producto...</option>';
+            codigoSelect.innerHTML = '<option value="">Selecione um produto...</option>';
             listaProdutos.forEach(prod => {
                 const option = document.createElement("option");
                 option.value = prod.codigo;
-                option.textContent = `${prod.codigo} - ${prod.nome || 'Productum'} (Saldo: ${prod["saldo atual"] || 0})`;
+                option.textContent = `${prod.codigo} - ${prod.nome || 'Produto'} (Saldo: ${prod["saldo atual"] || 0})`;
                 codigoSelect.appendChild(option);
             });
         } catch (erro) {
             console.error(erro);
-            codigoSelect.innerHTML = '<option value="">Error in carregar</option>';
-            mensagemStatus.textContent = "Error carring data from GitHub.";
+            codigoSelect.innerHTML = '<option value="">Erro ao carregar</option>';
+            mensagemStatus.textContent = "Erro ao carregar os dados do GitHub.";
             mensagemStatus.className = "status-msg erro";
         }
     }
@@ -85,11 +85,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 mensagemStatus.className = "status-msg sucesso";
                 estoqueForm.reset();
             } else {
-                throw new Error("Power Automate error.");
+                throw new Error("Erro no Power Automate.");
             }
         } catch (erro) {
             console.error(erro);
-            mensagemStatus.textContent = "Error in sending request.";
+            mensagemStatus.textContent = "Erro ao enviar a solicitação.";
             mensagemStatus.className = "status-msg erro";
         } finally {
             btnEnviar.disabled = false;
