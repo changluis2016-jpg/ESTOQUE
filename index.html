@@ -3,60 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Estoque - Almoxarifado</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Entrada de Material - Controle de Estoque</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f4f6f9; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .container { background: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
+        h2 { color: #1e3a8a; text-align: center; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #6b7280; font-size: 14px; margin-bottom: 25px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: 600; color: #374151; margin-bottom: 5px; font-size: 14px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; outline: none; transition: border-color 0.2s; }
+        input:focus, select:focus { border-color: #2563eb; }
+        button { width: 100%; background-color: #16a34a; color: white; border: none; padding: 12px; font-size: 16px; font-weight: 600; border-radius: 6px; cursor: pointer; transition: background-color 0.2s; margin-top: 10px; }
+        button:hover { background-color: #15803d; }
+        button:disabled { background-color: #9ca3af; cursor: not-allowed; }
+        .back-link { display: block; text-align: center; margin-top: 15px; color: #2563eb; text-decoration: none; font-size: 14px; }
+        .back-link:hover { text-decoration: underline; }
+        .status-msg { margin-top: 15px; text-align: center; font-weight: 600; font-size: 14px; }
+        .status-msg.sucesso { color: #16a34a; }
+        .status-msg.erro { color: #dc2626; }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Controle de Estoque</h1>
-            <p>SENAC - Cuiabá</p>
-        </header>
 
-        <div class="card">
-            <h2>Registrar Movimentação</h2>
-            <form id="estoqueForm">
-                <div class="form-group">
-                    <label for="tipoAcao">Tipo de Operação:</label>
-                    <select id="tipoAcao" required>
-                        <option value="saida">Saída de Material</option>
-                        <option value="entrada">Entrada de Material</option>
-                    </select>
-                </div>
+<div class="container">
+    <h2>Registrar Entrada</h2>
+    <p class="subtitle">SENAC - Cuiabá</p>
 
-                <div class="form-group">
-                    <label for="numRequisicao">Nº da Requisição / Documento:</label>
-                    <input type="text" id="numRequisicao" placeholder="Ex: REQ-2026/001" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="turmaExtensao">Turma / Extensão / Setor:</label>
-                    <input type="text" id="turmaExtensao" placeholder="Ex: Téc. Enfermagem - Turma A" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="codigoSelect">Selecione o Produto:</label>
-                    <select id="codigoSelect" required>
-                        <option value="">Carregando produtos do GitHub...</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="quantidade">Quantidade:</label>
-                    <input type="number" id="quantidade" min="1" value="1" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="validade">Validade:</label>
-                    <input type="date" id="validade" required>
-                </div>
-
-                <button type="submit" id="btnEnviar">Processar Movimentação</button>
-            </form>
-            <div id="mensagemStatus" class="status-msg"></div>
+    <form id="entradaForm">
+        <div class="form-group">
+            <label for="numRequisicao">Nº da Requisição / Documento:</label>
+            <input type="text" id="numRequisicao" required placeholder="Ex: NF-12345">
         </div>
-    </div>
 
-    <script src="index.js"></script>
+        <div class="form-group">
+            <label for="turmaExtensao">Turma / Extensão / Setor / Fornecedor:</label>
+            <input type="text" id="turmaExtensao" required placeholder="Ex: Fornecedor X ou Setor Y">
+        </div>
+
+        <div class="form-group">
+            <label for="codigoSelect">Selecione ou Informe o Produto:</label>
+            <select id="codigoSelect" required>
+                <option value="">Carregando produtos do GitHub...</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="quantidade">Quantidade:</label>
+            <input type="number" id="quantidade" min="1" required placeholder="Ex: 10">
+        </div>
+
+        <div class="form-group">
+            <label for="validade">Validade:</label>
+            <input type="date" id="validade" required>
+        </div>
+
+        <button type="submit" id="btnEnviar">Processar Entrada</button>
+    </form>
+
+    <a href="index.html" class="back-link">← Voltar ao Menu Principal</a>
+    <div id="mensagemStatus"></div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const urlDadosJson = "https://raw.githubusercontent.com/changluis2016-jpg/ESTOQUE/main/dados.json";
+        // Insira abaixo a URL do Power Automate específica para Entrada (ou a mesma com a flag de entrada)
+        const urlPowerAutomate = "COLE_AQUI_A_URL_DO_POWER_AUTOMATE_ENTRADA";
+
+        const codigoSelect = document.getElementById("codigoSelect");
+        const entradaForm = document.getElementById("entradaForm");
+        const mensagemStatus = document.getElementById("mensagemStatus");
+        const btnEnviar = document.getElementById("btnEnviar");
+
+        let listaProdutos = [];
+
+        async function carregarProdutos() {
+            try {
+                const resposta = await fetch(urlDadosJson);
+                if (!resposta.ok) throw new Error("Erro ao carregar dados.json");
+                listaProdutos = await resposta.json();
+                
+                codigoSelect.innerHTML = '<option value="">Selecione um produto existente ou informe novo...</option>';
+                listaProdutos.forEach(prod => {
+                    const option = document.createElement("option");
+                    option.value = prod.codigo;
+                    option.textContent = `${prod.codigo} - ${prod.nome || 'Produto'} (Saldo: ${prod["saldo atual"] || 0})`;
+                    codigoSelect.appendChild(option);
+                });
+            } catch (erro) {
+                console.error(erro);
+                codigoSelect.innerHTML = '<option value="">Erro ao carregar produtos</option>';
+            }
+        }
+
+        carregarProdutos();
+
+        entradaForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const payload = {
+                acao: "entrada",
+                requisicao: document.getElementById("numRequisicao").value.trim(),
+                turma: document.getElementById("turmaExtensao").value.trim(),
+                itens: [
+                    {
+                        codigo: codigoSelect.value,
+                        quantidade: parseInt(document.getElementById("quantidade").value, 10),
+                        validade: document.getElementById("validade").value
+                    }
+                ]
+            };
+
+            btnEnviar.disabled = true;
+            btnEnviar.textContent = "Processando...";
+            mensagemStatus.textContent = "";
+
+            try {
+                const respostaFluxo = await fetch(urlPowerAutomate, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                if (respostaFluxo.ok) {
+                    mensagemStatus.textContent = "Entrada registrada com sucesso!";
+                    mensagemStatus.className = "status-msg sucesso";
+                    entradaForm.reset();
+                } else {
+                    throw new Error("Erro no fluxo.");
+                }
+            } catch (erro) {
+                console.error(erro);
+                mensagemStatus.textContent = "Erro ao enviar a solicitação.";
+                mensagemStatus.className = "status-msg erro";
+            } finally {
+                btnEnviar.disabled = false;
+                btnEnviar.textContent = "Processar Entrada";
+            }
+        });
+    });
+</script>
+
 </body>
+</html>
 </html>
