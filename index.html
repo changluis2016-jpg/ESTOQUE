@@ -184,7 +184,7 @@
                 <div id="statusEntrada" class="status-msg"></div>
             </div>
 
-            <!-- ABA 3: SAÍDA DE MATERIAL -->
+            <!-- ABA 3: SAÍDA DE MATERIAL (Com Escolha de Lote / Validade) -->
             <div id="aba-saida" class="tab-content">
                 <form id="saidaForm">
                     <div class="form-grid">
@@ -197,16 +197,26 @@
                             <input type="text" id="saiTurma" required placeholder="Ex: Turma de Enfermagem">
                         </div>
                     </div>
+
                     <div class="form-group">
-                        <label>Selecione o Produto:</label>
-                        <select id="saiCodigoSelect" required>
+                        <label>Digite ou Selecione o Produto (Código / Nome):</label>
+                        <select id="saiCodigoSelect" required onchange="carregarValidadesSaida()">
                             <option value="">Carregando produtos...</option>
                         </select>
                     </div>
+
                     <div class="form-group">
-                        <label>Quantidade:</label>
+                        <label>Selecione o Lote (Validade e Saldo Disponível):</label>
+                        <select id="saiValidadeSelect" required>
+                            <option value="">Primeiro selecione um produto acima...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Quantidade para Saída:</label>
                         <input type="number" id="saiQuantidade" min="1" required placeholder="Ex: 2">
                     </div>
+
                     <button type="submit" class="btn btn-saida" id="btnSaida">Processar Saída</button>
                 </form>
                 <div id="statusSaida" class="status-msg"></div>
@@ -244,11 +254,8 @@
     let listaProdutos = [];
     let meugrafico = null;
 
-    // Converter número de série do Excel em Data legível (DD/MM/AAAA)
     function formatarDataExcel(serial) {
         if (!serial || serial === "-") return "-";
-        
-        // Se já vier formatado como data texto (ex: 2026-12-16 ou 16/12/2026)
         if (typeof serial === "string" && (serial.includes("-") || serial.includes("/"))) {
             if (serial.includes("-")) {
                 const partes = serial.split("-");
@@ -256,11 +263,9 @@
             }
             return serial;
         }
-
         const numSerial = parseFloat(serial);
         if (isNaN(numSerial)) return serial;
 
-        // Conversão do número serial do Excel (época base 1900-01-01)
         const utc_days = Math.floor(numSerial - 25569);
         const utc_value = utc_days * 86400;
         const date_info = new Date(utc_value * 1000);
@@ -377,18 +382,48 @@
         selectEntrada.innerHTML = '<option value="">Selecione um produto...</option>';
         selectSaida.innerHTML = '<option value="">Selecione um produto...</option>';
 
+        // Criar lista única de códigos para a saída
+        const codigosUnicos = {};
         listaProdutos.forEach(prod => {
-            const optText = `${prod.cod} - ${prod.produto || 'Produto'} (Saldo: ${prod["saldo atual"] || 0})`;
-            
+            if (!codigosUnicos[prod.cod]) {
+                codigosUnicos[prod.cod] = prod.produto || 'Produto';
+            }
+        });
+
+        for (const [cod, nome] of Object.entries(codigosUnicos)) {
             const opt1 = document.createElement("option");
-            opt1.value = prod.cod;
-            opt1.textContent = optText;
+            opt1.value = cod;
+            opt1.textContent = `${cod} - ${nome}`;
             selectEntrada.appendChild(opt1);
 
             const opt2 = document.createElement("option");
-            opt2.value = prod.cod;
-            opt2.textContent = optText;
+            opt2.value = cod;
+            opt2.textContent = `${cod} - ${nome}`;
             selectSaida.appendChild(opt2);
+        }
+    }
+
+    // Carregar validades disponíveis quando um produto é selecionado na saída
+    function carregarValidadesSaida() {
+        const codSelecionado = document.getElementById("saiCodigoSelect").value;
+        const selectValidade = document.getElementById("saiValidadeSelect");
+
+        selectValidade.innerHTML = '<option value="">Selecione o lote / validade...</option>';
+
+        if (!codSelecionado) return;
+
+        // Filtrar todos os registos que possuem este código
+        const lotes = listaProdutos.filter(prod => String(prod.cod) === String(codSelecionado));
+
+        lotes.forEach(lote => {
+            const dataFormatada = formatarDataExcel(lote.validade);
+            const saldoDisponivel = lote["saldo atual"] || 0;
+            const itemInternalId = lote.ItemInternalId || lote.__PowerAppsId__ || "";
+
+            const opt = document.createElement("option");
+            opt.value = lote.validade; // ou o ID/ItemInternalId se preferir identificar o lote exato
+            opt.textContent = `Validade: ${dataFormatada} | Saldo Disponível: ${saldoDisponivel} unidades`;
+            selectValidade.appendChild(opt);
         });
     }
 
@@ -523,7 +558,7 @@
             itens: [{
                 codigo: document.getElementById("saiCodigoSelect").value,
                 quantidade: parseInt(document.getElementById("saiQuantidade").value, 10),
-                validade: "2026-12-31"
+                validade: document.getElementById("saiValidadeSelect").value
             }]
         };
 
@@ -541,6 +576,7 @@
                 status.textContent = "Saída registrada com sucesso!";
                 status.className = "status-msg sucesso";
                 document.getElementById("saidaForm").reset();
+                document.getElementById("saiValidadeSelect").innerHTML = '<option value="">Primeiro selecione um produto acima...</option>';
             } else { throw new Error(); }
         } catch {
             status.textContent = "Erro ao registrar saída.";
