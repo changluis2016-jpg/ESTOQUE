@@ -151,7 +151,7 @@
                 </div>
             </div>
 
-            <!-- ABA 2: ENTRADA DE MATERIAL (Com Digitação Manual de Código e Dados de Produto Novo) -->
+            <!-- ABA 2: ENTRADA DE MATERIAL -->
             <div id="aba-entrada" class="tab-content">
                 <form id="entradaForm">
                     <div class="form-grid">
@@ -414,7 +414,6 @@
         }
     }
 
-    // Se o usuário digitar um código que já existe na entrada, preenche automaticamente o nome, categoria e tipo para facilitar
     function verificarProdutoExistente() {
         const codDigitado = document.getElementById("entCodigo").value.trim();
         if (!codDigitado) return;
@@ -529,7 +528,7 @@
         });
     }
 
-    // Processar Envio de Entrada (Enviando código digitado, nome, categoria, tipo, etc.)
+    // Processar Envio de Entrada
     document.getElementById("entradaForm").addEventListener("submit", async (e) => {
         e.preventDefault();
         const btn = document.getElementById("btnEntrada");
@@ -609,7 +608,7 @@
         } catch {
             status.textContent = "Erro ao registrar saída.";
             status.className = "status-msg erro";
-        } else {
+        } finally {
             btn.disabled = false;
             btn.textContent = "Processar Saída";
         }
