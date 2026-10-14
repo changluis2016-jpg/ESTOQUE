@@ -123,7 +123,7 @@
                 <button class="tab-btn" onclick="mudarAba('validades', event)">⚠️ Validades Próximas</button>
             </div>
 
-            <!-- ABA 1: CONSULTAR ESTOQUE (Com Validade e Busca) -->
+            <!-- ABA 1: CONSULTAR ESTOQUE -->
             <div id="aba-consulta" class="tab-content active">
                 <div class="form-group">
                     <label>Pesquisar por Código ou Descrição do Produto:</label>
@@ -139,11 +139,12 @@
                                 <th>Tipo</th>
                                 <th>Saldo</th>
                                 <th>Validade</th>
+                                <th>Dias p/ Vencer</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
                         <tbody id="tabelaConsulta">
-                            <tr><td colspan="7" style="text-align: center;">Carregando dados...</td></tr>
+                            <tr><td colspan="8" style="text-align: center;">Carregando dados...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -220,12 +221,13 @@
                                 <th>Cód</th>
                                 <th>Produto</th>
                                 <th>Saldo</th>
+                                <th>Validade</th>
                                 <th>Dias p/ Vencer</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
                         <tbody id="tabelaValidades">
-                            <tr><td colspan="5" style="text-align: center;">Carregando dados...</td></tr>
+                            <tr><td colspan="6" style="text-align: center;">Carregando dados...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -241,6 +243,34 @@
 
     let listaProdutos = [];
     let meugrafico = null;
+
+    // Converter número de série do Excel em Data legível (DD/MM/AAAA)
+    function formatarDataExcel(serial) {
+        if (!serial || serial === "-") return "-";
+        
+        // Se já vier formatado como data texto (ex: 2026-12-16 ou 16/12/2026)
+        if (typeof serial === "string" && (serial.includes("-") || serial.includes("/"))) {
+            if (serial.includes("-")) {
+                const partes = serial.split("-");
+                if (partes[0].length === 4) return `${partes[2]}/${partes[1]}/${partes[0]}`;
+            }
+            return serial;
+        }
+
+        const numSerial = parseFloat(serial);
+        if (isNaN(numSerial)) return serial;
+
+        // Conversão do número serial do Excel (época base 1900-01-01)
+        const utc_days = Math.floor(numSerial - 25569);
+        const utc_value = utc_days * 86400;
+        const date_info = new Date(utc_value * 1000);
+
+        const dia = String(date_info.getUTCDate()).padStart(2, '0');
+        const mes = String(date_info.getUTCMonth() + 1).padStart(2, '0');
+        const ano = date_info.getUTCFullYear();
+
+        return `${dia}/${mes}/${ano}`;
+    }
 
     function mudarAba(aba, evt) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -278,7 +308,7 @@
 
         } catch (erro) {
             console.error(erro);
-            document.getElementById("tabelaConsulta").innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">Erro ao carregar dados do GitHub.</td></tr>';
+            document.getElementById("tabelaConsulta").innerHTML = '<tr><td colspan="8" style="text-align: center; color: red;">Erro ao carregar dados do GitHub.</td></tr>';
         }
     }
 
@@ -374,13 +404,14 @@
         });
 
         if (filtrados.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Nenhum produto encontrado.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Nenhum produto encontrado.</td></tr>';
             return;
         }
 
         filtrados.forEach(prod => {
             const tr = document.createElement("tr");
             const diasVencer = prod["Dias p/ Vencer"] !== undefined ? parseInt(prod["Dias p/ Vencer"], 10) : 999;
+            const dataValidadeFormatada = formatarDataExcel(prod.validade);
             const statusValidade = prod["Status Validade"] || "☑️ OK";
             
             let badge = `<span class="badge-ok">${statusValidade}</span>`;
@@ -396,6 +427,7 @@
                 <td>${prod.Categoria || '-'}</td>
                 <td>${prod.TIPO || '-'}</td>
                 <td><b>${prod["saldo atual"] || 0}</b></td>
+                <td>${dataValidadeFormatada}</td>
                 <td>${diasVencer !== 999 ? diasVencer + ' dias' : '-'}</td>
                 <td>${badge}</td>
             `;
@@ -408,13 +440,14 @@
         tbody.innerHTML = "";
 
         if (!listaProdutos || listaProdutos.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum produto encontrado.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum produto encontrado.</td></tr>';
             return;
         }
 
         listaProdutos.forEach(prod => {
             const tr = document.createElement("tr");
             const diasVencer = prod["Dias p/ Vencer"] !== undefined ? parseInt(prod["Dias p/ Vencer"], 10) : 999;
+            const dataValidadeFormatada = formatarDataExcel(prod.validade);
             const statusValidade = prod["Status Validade"] || "☑️ OK";
             
             let badge = `<span class="badge-ok">${statusValidade}</span>`;
@@ -428,6 +461,7 @@
                 <td>${prod.cod}</td>
                 <td>${prod.produto || '-'}</td>
                 <td>${prod["saldo atual"] || 0}</td>
+                <td>${dataValidadeFormatada}</td>
                 <td>${diasVencer} dias</td>
                 <td>${badge}</td>
             `;
