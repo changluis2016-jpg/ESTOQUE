@@ -133,6 +133,7 @@
                     <table>
                         <thead>
                             <tr>
+                                <th>ID</th>
                                 <th>Cód</th>
                                 <th>Produto</th>
                                 <th>Categoria</th>
@@ -144,18 +145,18 @@
                             </tr>
                         </thead>
                         <tbody id="tabelaConsulta">
-                            <tr><td colspan="8" style="text-align: center;">Carregando dados...</td></tr>
+                            <tr><td colspan="9" style="text-align: center;">Carregando dados...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- ABA 2: ENTRADA DE MATERIAL -->
+            <!-- ABA 2: ENTRADA DE MATERIAL (Com Digitação Manual de Código e Dados de Produto Novo) -->
             <div id="aba-entrada" class="tab-content">
                 <form id="entradaForm">
                     <div class="form-grid">
                         <div class="form-group">
-                            <label>Nº da Requisição / Documento:</label>
+                            <label>Nº da Requisição / NF:</label>
                             <input type="text" id="entRequisicao" required placeholder="Ex: NF-123">
                         </div>
                         <div class="form-group">
@@ -163,12 +164,29 @@
                             <input type="text" id="entTurma" required placeholder="Ex: Fornecedor ABC">
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label>Selecione o Produto:</label>
-                        <select id="entCodigoSelect" required>
-                            <option value="">Carregando produtos...</option>
-                        </select>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Código do Produto:</label>
+                            <input type="text" id="entCodigo" required placeholder="Digite o código (ex: 1004)" onblur="verificarProdutoExistente()">
+                        </div>
+                        <div class="form-group">
+                            <label>Nome / Descrição do Produto:</label>
+                            <input type="text" id="entNomeProduto" required placeholder="Ex: Água Mineral 500ml">
+                        </div>
                     </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Categoria:</label>
+                            <input type="text" id="entCategoria" placeholder="Ex: BEBIDAS">
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo (Un, Pç, Cx...):</label>
+                            <input type="text" id="entTipo" placeholder="Ex: UN">
+                        </div>
+                    </div>
+
                     <div class="form-grid">
                         <div class="form-group">
                             <label>Quantidade:</label>
@@ -179,12 +197,13 @@
                             <input type="date" id="entValidade" required>
                         </div>
                     </div>
+
                     <button type="submit" class="btn btn-entrada" id="btnEntrada">Processar Entrada</button>
                 </form>
                 <div id="statusEntrada" class="status-msg"></div>
             </div>
 
-            <!-- ABA 3: SAÍDA DE MATERIAL (Com Escolha de Lote / Validade) -->
+            <!-- ABA 3: SAÍDA DE MATERIAL -->
             <div id="aba-saida" class="tab-content">
                 <form id="saidaForm">
                     <div class="form-grid">
@@ -199,14 +218,14 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Digite ou Selecione o Produto (Código / Nome):</label>
+                        <label>Selecione o Produto (Código / Nome):</label>
                         <select id="saiCodigoSelect" required onchange="carregarValidadesSaida()">
                             <option value="">Carregando produtos...</option>
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label>Selecione o Lote (Validade e Saldo Disponível):</label>
+                        <label>Selecione o Lote Específico (Validade e Saldo):</label>
                         <select id="saiValidadeSelect" required>
                             <option value="">Primeiro selecione um produto acima...</option>
                         </select>
@@ -228,6 +247,7 @@
                     <table>
                         <thead>
                             <tr>
+                                <th>ID</th>
                                 <th>Cód</th>
                                 <th>Produto</th>
                                 <th>Saldo</th>
@@ -237,7 +257,7 @@
                             </tr>
                         </thead>
                         <tbody id="tabelaValidades">
-                            <tr><td colspan="6" style="text-align: center;">Carregando dados...</td></tr>
+                            <tr><td colspan="7" style="text-align: center;">Carregando dados...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -308,12 +328,12 @@
 
             atualizarStats();
             renderizarGrafico();
-            preencherSelects();
+            preencherSelectSaida();
             pesquisarProdutos();
 
         } catch (erro) {
             console.error(erro);
-            document.getElementById("tabelaConsulta").innerHTML = '<tr><td colspan="8" style="text-align: center; color: red;">Erro ao carregar dados do GitHub.</td></tr>';
+            document.getElementById("tabelaConsulta").innerHTML = '<tr><td colspan="9" style="text-align: center; color: red;">Erro ao carregar dados do GitHub.</td></tr>';
         }
     }
 
@@ -375,14 +395,10 @@
         });
     }
 
-    function preencherSelects() {
-        const selectEntrada = document.getElementById("entCodigoSelect");
+    function preencherSelectSaida() {
         const selectSaida = document.getElementById("saiCodigoSelect");
-
-        selectEntrada.innerHTML = '<option value="">Selecione um produto...</option>';
         selectSaida.innerHTML = '<option value="">Selecione um produto...</option>';
 
-        // Criar lista única de códigos para a saída
         const codigosUnicos = {};
         listaProdutos.forEach(prod => {
             if (!codigosUnicos[prod.cod]) {
@@ -391,11 +407,6 @@
         });
 
         for (const [cod, nome] of Object.entries(codigosUnicos)) {
-            const opt1 = document.createElement("option");
-            opt1.value = cod;
-            opt1.textContent = `${cod} - ${nome}`;
-            selectEntrada.appendChild(opt1);
-
             const opt2 = document.createElement("option");
             opt2.value = cod;
             opt2.textContent = `${cod} - ${nome}`;
@@ -403,26 +414,37 @@
         }
     }
 
-    // Carregar validades disponíveis quando um produto é selecionado na saída
+    // Se o usuário digitar um código que já existe na entrada, preenche automaticamente o nome, categoria e tipo para facilitar
+    function verificarProdutoExistente() {
+        const codDigitado = document.getElementById("entCodigo").value.trim();
+        if (!codDigitado) return;
+
+        const encontrado = listaProdutos.find(p => String(p.cod) === String(codDigitado));
+        if (encontrado) {
+            document.getElementById("entNomeProduto").value = encontrado.produto || "";
+            document.getElementById("entCategoria").value = encontrado.Categoria || "";
+            document.getElementById("entTipo").value = encontrado.TIPO || "";
+        }
+    }
+
     function carregarValidadesSaida() {
         const codSelecionado = document.getElementById("saiCodigoSelect").value;
         const selectValidade = document.getElementById("saiValidadeSelect");
 
-        selectValidade.innerHTML = '<option value="">Selecione o lote / validade...</option>';
+        selectValidade.innerHTML = '<option value="">Selecione o lote específico...</option>';
 
         if (!codSelecionado) return;
 
-        // Filtrar todos os registos que possuem este código
         const lotes = listaProdutos.filter(prod => String(prod.cod) === String(codSelecionado));
 
         lotes.forEach(lote => {
             const dataFormatada = formatarDataExcel(lote.validade);
             const saldoDisponivel = lote["saldo atual"] || 0;
-            const itemInternalId = lote.ItemInternalId || lote.__PowerAppsId__ || "";
+            const idLinha = lote.ID || "";
 
             const opt = document.createElement("option");
-            opt.value = lote.validade; // ou o ID/ItemInternalId se preferir identificar o lote exato
-            opt.textContent = `Validade: ${dataFormatada} | Saldo Disponível: ${saldoDisponivel} unidades`;
+            opt.value = idLinha;
+            opt.textContent = `Linha ID [${idLinha}] — Validade: ${dataFormatada} | Saldo Disponível: ${saldoDisponivel} un.`;
             selectValidade.appendChild(opt);
         });
     }
@@ -435,11 +457,12 @@
         const filtrados = listaProdutos.filter(prod => {
             const codStr = String(prod.cod || "").toLowerCase();
             const prodStr = String(prod.produto || "").toLowerCase();
-            return codStr.includes(termo) || prodStr.includes(termo);
+            const idStr = String(prod.ID || "").toLowerCase();
+            return codStr.includes(termo) || prodStr.includes(termo) || idStr.includes(termo);
         });
 
         if (filtrados.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Nenhum produto encontrado.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">Nenhum produto encontrado.</td></tr>';
             return;
         }
 
@@ -457,6 +480,7 @@
             }
 
             tr.innerHTML = `
+                <td><b>#${prod.ID || '-'}</b></td>
                 <td><b>${prod.cod}</b></td>
                 <td>${prod.produto || '-'}</td>
                 <td>${prod.Categoria || '-'}</td>
@@ -475,7 +499,7 @@
         tbody.innerHTML = "";
 
         if (!listaProdutos || listaProdutos.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum produto encontrado.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Nenhum produto encontrado.</td></tr>';
             return;
         }
 
@@ -493,6 +517,7 @@
             }
 
             tr.innerHTML = `
+                <td><b>#${prod.ID || '-'}</b></td>
                 <td>${prod.cod}</td>
                 <td>${prod.produto || '-'}</td>
                 <td>${prod["saldo atual"] || 0}</td>
@@ -504,7 +529,7 @@
         });
     }
 
-    // Processar Envio de Entrada
+    // Processar Envio de Entrada (Enviando código digitado, nome, categoria, tipo, etc.)
     document.getElementById("entradaForm").addEventListener("submit", async (e) => {
         e.preventDefault();
         const btn = document.getElementById("btnEntrada");
@@ -515,7 +540,10 @@
             requisicao: document.getElementById("entRequisicao").value.trim(),
             turma: document.getElementById("entTurma").value.trim(),
             itens: [{
-                codigo: document.getElementById("entCodigoSelect").value,
+                codigo: document.getElementById("entCodigo").value.trim(),
+                produto: document.getElementById("entNomeProduto").value.trim(),
+                categoria: document.getElementById("entCategoria").value.trim(),
+                tipo: document.getElementById("entTipo").value.trim(),
                 quantidade: parseInt(document.getElementById("entQuantidade").value, 10),
                 validade: document.getElementById("entValidade").value
             }]
@@ -556,9 +584,9 @@
             requisicao: document.getElementById("saiRequisicao").value.trim(),
             turma: document.getElementById("saiTurma").value.trim(),
             itens: [{
+                idLinha: document.getElementById("saiValidadeSelect").value,
                 codigo: document.getElementById("saiCodigoSelect").value,
-                quantidade: parseInt(document.getElementById("saiQuantidade").value, 10),
-                validade: document.getElementById("saiValidadeSelect").value
+                quantidade: parseInt(document.getElementById("saiQuantidade").value, 10)
             }]
         };
 
@@ -581,7 +609,7 @@
         } catch {
             status.textContent = "Erro ao registrar saída.";
             status.className = "status-msg erro";
-        } finally {
+        } else {
             btn.disabled = false;
             btn.textContent = "Processar Saída";
         }
