@@ -157,17 +157,17 @@
                 </div>
             </div>
 
-            <!-- ABA 2: ENTRADA DE MATERIAL (MULTIPLOS ITENS) -->
+            <!-- ABA 2: ENTRADA DE MATERIAL (MULTIPLOS ITENS COM BUSCA INTELIGENTE) -->
             <div id="aba-entrada" class="tab-content">
                 <form id="entradaForm">
                     <div class="form-grid">
                         <div class="form-group">
-                            <label>Nº da Requisição / NF:</label>
-                            <input type="text" id="entRequisicao" required placeholder="Ex: NF-123">
+                            <label>Nº da Nota Fiscal / Documento:</label>
+                            <input type="text" id="entRequisicao" required placeholder="Ex: NF-12345">
                         </div>
                         <div class="form-group">
-                            <label>Fornecedor / Setor:</label>
-                            <input type="text" id="entTurma" required placeholder="Ex: Fornecedor ABC">
+                            <label>Fornecedor / Origem:</label>
+                            <input type="text" id="entTurma" required placeholder="Ex: Nome do Fornecedor">
                         </div>
                     </div>
 
@@ -183,7 +183,7 @@
                             <thead>
                                 <tr>
                                     <th style="width: 15%;">Código</th>
-                                    <th style="width: 40%;">Produto</th>
+                                    <th style="width: 40%;">Produto (Autopreenchido)</th>
                                     <th style="width: 15%;">Quantidade</th>
                                     <th style="width: 20%;">Validade</th>
                                     <th style="width: 10%;">Ação</th>
@@ -344,7 +344,7 @@
             const resCadastro = await fetch(urlBaseCadastroJson);
             if (resCadastro.ok) {
                 const rawData = await resCadastro.json();
-                listaBaseCadastro = Array.isArray(rawData) ? rawData : (rawData.BASE_CADASTRO || []);
+                listaBaseCadastro = Array.isArray(rawData) ? rawData : (rawData.BASE_CADASTRO || rawData);
                 
                 const badge = document.getElementById("statusBadgeGitHub");
                 if (badge) badge.innerHTML = '<span class="dot-green"></span> Base Cadastrada OK';
@@ -413,13 +413,13 @@
         });
     }
 
-    // --- ENTRADA MULTIPLA COM BUSCA DUPLA ULTRA FLEXÍVEL ---
+    // --- ENTRADA MULTIPLA COM BUSCA DUPLA INTELIGENTE (ESTOQUE + BASE CADASTRO) ---
     function adicionarLinhaEntrada() {
         const tbody = document.getElementById('tabelaItensEntradaBody');
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><input type="text" class="input-cod" placeholder="Ex: 1004" onblur="preencherNomeProduto(this)" onkeyup="if(event.key==='Enter') preencherNomeProduto(this)" required></td>
-            <td><input type="text" class="input-nome" placeholder="Nome do produto" required></td>
+            <td><input type="text" class="input-nome" placeholder="Nome do produto (Autopreenchido)" required></td>
             <td><input type="number" class="input-qtd" min="1" placeholder="Qtd" required></td>
             <td><input type="date" class="input-val" required></td>
             <td><button type="button" class="btn btn-remover btn-acao-tabela" onclick="removerLinha(this)">X</button></td>
@@ -431,22 +431,24 @@
         const cod = input.value.trim();
         if (!cod) return;
         const tr = input.closest('tr');
+        const inputNome = tr.querySelector('.input-nome');
         
-        // 1. Procura no estoque atual (dados.json)
+        // 1. Procura primeiro no estoque atual (dados.json)
         let encontradoEstoque = listaProdutos.find(p => String(p.cod) === String(cod) || String(p.COD) === String(cod));
         
         if (encontradoEstoque) {
-            tr.querySelector('.input-nome').value = encontradoEstoque.produto || encontradoEstoque.DESCRICAO || "";
+            inputNome.value = encontradoEstoque.produto || encontradoEstoque.DESCRICAO || encontradoEstoque.Descrição || "";
             return;
         }
 
-        // 2. Procura na Base de Cadastro Oficial (base_cadastro.json)
+        // 2. Se não estiver no estoque, procura na Base de Cadastro Oficial (base_cadastro.json)
         let encontradoBase = listaBaseCadastro.find(p => String(p.COD) === String(cod) || String(p.cod) === String(cod));
         
         if (encontradoBase) {
-            tr.querySelector('.input-nome').value = encontradoBase.DESCRICAO || encontradoBase.produto || encontradoBase.Descrição || "";
+            inputNome.value = encontradoBase.DESCRICAO || encontradoBase.produto || encontradoBase.Descrição || "";
         } else {
-            tr.querySelector('.input-nome').value = "";
+            inputNome.value = "";
+            inputNome.placeholder = "⚠️ Código não encontrado nas bases";
         }
     }
 
