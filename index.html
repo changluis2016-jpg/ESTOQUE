@@ -432,11 +432,13 @@
             return;
         }
 
-        // 2. Se não estiver no estoque, procura na Base de Cadastro Oficial (base_cadastro.json)
+        // 2. Procura na Base de Cadastro Oficial (base_cadastro.json) lendo as chaves maiúsculas do arquivo
         let encontradoBase = listaBaseCadastro.find(p => String(p.COD) === String(cod) || String(p.cod) === String(cod));
         
         if (encontradoBase) {
             tr.querySelector('.input-nome').value = encontradoBase.DESCRICAO || encontradoBase.produto || "";
+        } else {
+            tr.querySelector('.input-nome').value = "";
         }
     }
 
