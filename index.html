@@ -42,18 +42,23 @@
         .tab-content { display: none; padding: 25px; }
         .tab-content.active { display: block; }
 
-        /* Formulários */
+        /* Formulários e Tabelas Dinâmicas */
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px; }
         .form-group { margin-bottom: 15px; }
         label { display: block; font-weight: 600; color: #334155; margin-bottom: 6px; font-size: 13px; }
-        input, select { width: 100%; padding: 11px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s; }
+        input, select { width: 100%; padding: 11px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s; background: white; }
         input:focus, select:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
         
         .btn { border: none; padding: 12px 20px; font-size: 15px; font-weight: 600; border-radius: 8px; cursor: pointer; color: white; transition: background-color 0.2s; display: inline-flex; justify-content: center; align-items: center; gap: 8px; }
-        .btn-entrada { background-color: #16a34a; width: 100%; }
+        .btn-entrada { background-color: #16a34a; width: 100%; margin-top: 15px; }
         .btn-entrada:hover { background-color: #15803d; }
-        .btn-saida { background-color: #dc2626; width: 100%; }
+        .btn-saida { background-color: #dc2626; width: 100%; margin-top: 15px; }
         .btn-saida:hover { background-color: #b91c1c; }
+        .btn-acao-tabela { padding: 6px 12px; font-size: 13px; border-radius: 6px; }
+        .btn-add-linha { background-color: #2563eb; margin-bottom: 15px; }
+        .btn-add-linha:hover { background-color: #1d4ed8; }
+        .btn-remover { background-color: #dc2626; color: white; }
+        .btn-remover:hover { background-color: #b91c1c; }
 
         .status-msg { margin-top: 15px; text-align: center; font-weight: 600; font-size: 14px; }
         .status-msg.sucesso { color: #16a34a; }
@@ -63,7 +68,7 @@
         .table-responsive { overflow-x: auto; max-height: 450px; }
         table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
         th { background-color: #f8fafc; color: #475569; font-weight: 600; padding: 12px 15px; border-bottom: 2px solid #e2e8f0; position: sticky; top: 0; z-index: 1; }
-        td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+        td { padding: 10px 15px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
         tr:hover { background-color: #f8fafc; }
 
         .badge-alerta { background-color: #fef2f2; color: #dc2626; border: 1px solid #fecaca; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 12px; }
@@ -151,7 +156,7 @@
                 </div>
             </div>
 
-            <!-- ABA 2: ENTRADA DE MATERIAL -->
+            <!-- ABA 2: ENTRADA DE MATERIAL (MULTIPLOS ITENS) -->
             <div id="aba-entrada" class="tab-content">
                 <form id="entradaForm">
                     <div class="form-grid">
@@ -165,45 +170,36 @@
                         </div>
                     </div>
 
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Código do Produto:</label>
-                            <input type="text" id="entCodigo" required placeholder="Digite o código (ex: 1004)" onblur="verificarProdutoExistente()">
-                        </div>
-                        <div class="form-group">
-                            <label>Nome / Descrição do Produto:</label>
-                            <input type="text" id="entNomeProduto" required placeholder="Ex: Água Mineral 500ml">
-                        </div>
+                    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3 style="font-size: 15px; color: #1e3a8a;">Itens para Entrada</h3>
+                        <button type="button" class="btn btn-add-linha" onclick="adicionarLinhaEntrada()">+ Adicionar Item</button>
                     </div>
 
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Categoria:</label>
-                            <input type="text" id="entCategoria" placeholder="Ex: BELEZA">
-                        </div>
-                        <div class="form-group">
-                            <label>Tipo (Un, Pç, Cx...):</label>
-                            <input type="text" id="entTipo" placeholder="Ex: UN">
-                        </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 15%;">Código</th>
+                                    <th style="width: 40%;">Produto</th>
+                                    <th style="width: 15%;">Quantidade</th>
+                                    <th style="width: 20%;">Validade</th>
+                                    <th style="width: 10%;">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaItensEntradaBody">
+                                <!-- Preenchido via JavaScript -->
+                            </tbody>
+                        </table>
                     </div>
 
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Quantidade:</label>
-                            <input type="number" id="entQuantidade" min="1" required placeholder="Ex: 10">
-                        </div>
-                        <div class="form-group">
-                            <label>Validade:</label>
-                            <input type="date" id="entValidade" required>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-entrada" id="btnEntrada">Processar Entrada</button>
+                    <button type="submit" class="btn btn-entrada" id="btnEntrada">Processar Entrada no Estoque</button>
                 </form>
                 <div id="statusEntrada" class="status-msg"></div>
             </div>
 
-            <!-- ABA 3: SAÍDA DE MATERIAL -->
+            <!-- ABA 3: SAÍDA DE MATERIAL (MULTIPLOS ITENS) -->
             <div id="aba-saida" class="tab-content">
                 <form id="saidaForm">
                     <div class="form-grid">
@@ -217,26 +213,30 @@
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>Selecione o Produto (Código / Nome):</label>
-                        <select id="saiCodigoSelect" required onchange="carregarValidadesSaida()">
-                            <option value="">Carregando produtos...</option>
-                        </select>
+                    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3 style="font-size: 15px; color: #dc2626;">Itens para Saída por Lote</h3>
+                        <button type="button" class="btn btn-add-linha" style="background-color: #dc2626;" onclick="adicionarLinhaSaida()">+ Adicionar Item</button>
                     </div>
 
-                    <div class="form-group">
-                        <label>Selecione o Lote Específico (Validade e Saldo):</label>
-                        <select id="saiValidadeSelect" required>
-                            <option value="">Primeiro selecione um produto acima...</option>
-                        </select>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 35%;">Produto / Código</th>
+                                    <th style="width: 40%;">Lote Específico (Validade e Saldo)</th>
+                                    <th style="width: 15%;">Quantidade</th>
+                                    <th style="width: 10%;">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaItensSaidaBody">
+                                <!-- Preenchido via JavaScript -->
+                            </tbody>
+                        </table>
                     </div>
 
-                    <div class="form-group">
-                        <label>Quantidade para Saída:</label>
-                        <input type="number" id="saiQuantidade" min="1" required placeholder="Ex: 2">
-                    </div>
-
-                    <button type="submit" class="btn btn-saida" id="btnSaida">Processar Saída</button>
+                    <button type="submit" class="btn btn-saida" id="btnSaida">Processar Saída no Estoque</button>
                 </form>
                 <div id="statusSaida" class="status-msg"></div>
             </div>
@@ -271,18 +271,9 @@
     const urlPowerAutomateEntrada = "https://default554116b687be480a9e3aa0e9e1a653.4b.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/02/workflows/53a06847ff1a435baa429b1692cfc84f/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=6J_jbnw0N4Ji2DKpAYDQEhNjpGpNRYUdKmueyuuXmrs";
     const urlPowerAutomateSaida = "COLE_AQUI_A_URL_DO_POWER_AUTOMATE_SAIDA";
 
-    // Categorias oficiais do Senac para padronização e exibição no gráfico
     const categoriasOficiais = [
-        "BELEZA",
-        "HOSPITALAR",
-        "DESCARTÁVEIS",
-        "ESTÉTICA",
-        "ARTESANATO",
-        "PAPELARIA E SUPRIMENTOS",
-        "DIVERSOS",
-        "CULINÁRIA",
-        "CONSERVAÇÃO E LIMPEZA",
-        "MODA"
+        "BELEZA", "HOSPITALAR", "DESCARTÁVEIS", "ESTÉTICA", "ARTESANATO",
+        "PAPELARIA E SUPRIMENTOS", "DIVERSOS", "CULINÁRIA", "CONSERVAÇÃO E LIMPEZA", "MODA"
     ];
 
     let listaProdutos = [];
@@ -322,9 +313,11 @@
         } else if (aba === 'entrada') {
             document.getElementById('aba-entrada').classList.add('active');
             evt.currentTarget.classList.add('active');
+            if (document.getElementById('tabelaItensEntradaBody').rows.length === 0) adicionarLinhaEntrada();
         } else if (aba === 'saida') {
             document.getElementById('aba-saida').classList.add('active');
             evt.currentTarget.classList.add('active');
+            if (document.getElementById('tabelaItensSaidaBody').rows.length === 0) adicionarLinhaSaida();
         } else if (aba === 'validades') {
             document.getElementById('aba-validades').classList.add('active');
             evt.currentTarget.classList.add('active');
@@ -342,7 +335,6 @@
 
             atualizarStats();
             renderizarGrafico();
-            preencherSelectSaida();
             pesquisarProdutos();
 
         } catch (erro) {
@@ -353,14 +345,11 @@
 
     function atualizarStats() {
         document.getElementById("statTotalProdutos").textContent = listaProdutos.length;
-
-        let totalQtd = 0;
-        let criticos = 0;
+        let totalQtd = 0, criticos = 0;
 
         listaProdutos.forEach(prod => {
             const saldo = parseInt(prod["saldo atual"] || 0, 10);
             const diasVencer = prod["Dias p/ Vencer"] !== undefined ? parseInt(prod["Dias p/ Vencer"], 10) : 999;
-            
             totalQtd += saldo;
             if (diasVencer <= 30) criticos++;
         });
@@ -370,49 +359,31 @@
     }
 
     function renderizarGrafico() {
-        // Inicializar o mapa com todas as categorias oficiais zeradas
         const categoriasMap = {};
         categoriasOficiais.forEach(cat => categoriasMap[cat] = 0);
 
         listaProdutos.forEach(prod => {
             let cat = (prod.Categoria || "DIVERSOS").trim().toUpperCase();
-            
-            // Normalizações comuns ou encaixe na mais próxima
-            if (cat.includes("LIMPEZA") || cat.includes("CONSERVACAO")) {
-                cat = "CONSERVAÇÃO E LIMPEZA";
-            } else if (cat.includes("CULINARIA")) {
-                cat = "CULINÁRIA";
-            } else if (cat.includes("DESCARTAVEL")) {
-                cat = "DESCARTÁVEIS";
-            } else if (cat.includes("ESTETICA")) {
-                cat = "ESTÉTICA";
-            } else if (cat.includes("PAPELARIA")) {
-                cat = "PAPELARIA E SUPRIMENTOS";
-            }
+            if (cat.includes("LIMPEZA") || cat.includes("CONSERVACAO")) cat = "CONSERVAÇÃO E LIMPEZA";
+            else if (cat.includes("CULINARIA")) cat = "CULINÁRIA";
+            else if (cat.includes("DESCARTAVEL")) cat = "DESCARTÁVEIS";
+            else if (cat.includes("ESTETICA")) cat = "ESTÉTICA";
+            else if (cat.includes("PAPELARIA")) cat = "PAPELARIA E SUPRIMENTOS";
 
-            // Se ainda não estiver na lista oficial, joga em DIVERSOS
-            if (!categoriasMap.hasOwnProperty(cat)) {
-                cat = "DIVERSOS";
-            }
-
-            const saldo = parseInt(prod["saldo atual"] || 0, 10);
-            categoriasMap[cat] += saldo;
+            if (!categoriasMap.hasOwnProperty(cat)) cat = "DIVERSOS";
+            categoriasMap[cat] += parseInt(prod["saldo atual"] || 0, 10);
         });
 
-        const labels = Object.keys(categoriasMap);
-        const data = Object.values(categoriasMap);
-
         const ctx = document.getElementById('categoriaChart').getContext('2d');
-        
         if (meugrafico) meugrafico.destroy();
 
         meugrafico = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: labels,
+                labels: Object.keys(categoriasMap),
                 datasets: [{
                     label: 'Quantidade em Estoque',
-                    data: data,
+                    data: Object.values(categoriasMap),
                     backgroundColor: '#1e3a8a',
                     borderRadius: 6
                 }]
@@ -420,60 +391,71 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    x: {
-                        ticks: { font: { size: 11 } }
-                    },
-                    y: { beginAtZero: true }
-                }
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } }
             }
         });
     }
 
-    function preencherSelectSaida() {
-        const selectSaida = document.getElementById("saiCodigoSelect");
-        selectSaida.innerHTML = '<option value="">Selecione um produto...</option>';
+    // --- ENTRADA MULTIPLA ---
+    function adicionarLinhaEntrada() {
+        const tbody = document.getElementById('tabelaItensEntradaBody');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="text" class="input-cod" placeholder="Ex: 1004" onblur="preencherNomeProduto(this)" required></td>
+            <td><input type="text" class="input-nome" placeholder="Nome do produto" required></td>
+            <td><input type="number" class="input-qtd" min="1" placeholder="Qtd" required></td>
+            <td><input type="date" class="input-val" required></td>
+            <td><button type="button" class="btn btn-remover btn-acao-tabela" onclick="removerLinha(this)">X</button></td>
+        `;
+        tbody.appendChild(tr);
+    }
 
+    function preencherNomeProduto(input) {
+        const cod = input.value.trim();
+        if (!cod) return;
+        const tr = input.closest('tr');
+        const encontrado = listaProdutos.find(p => String(p.cod) === String(cod));
+        if (encontrado) {
+            tr.querySelector('.input-nome').value = encontrado.produto || "";
+        }
+    }
+
+    // --- SAÍDA MULTIPLA ---
+    function adicionarLinhaSaida() {
+        const tbody = document.getElementById('tabelaItensSaidaBody');
+        const tr = document.createElement('tr');
+
+        // Cria select de produtos
+        let optionsProdutos = '<option value="">Selecione o produto...</option>';
         const codigosUnicos = {};
         listaProdutos.forEach(prod => {
             if (!codigosUnicos[prod.cod]) {
                 codigosUnicos[prod.cod] = prod.produto || 'Produto';
             }
         });
-
         for (const [cod, nome] of Object.entries(codigosUnicos)) {
-            const opt2 = document.createElement("option");
-            opt2.value = cod;
-            opt2.textContent = `${cod} - ${nome}`;
-            selectSaida.appendChild(opt2);
+            optionsProdutos += `<option value="${cod}">${cod} - ${nome}</option>`;
         }
+
+        tr.innerHTML = `
+            <td><select class="select-produto" onchange="atualizarLotesSaida(this)" required>${optionsProdutos}</select></td>
+            <td><select class="select-lote" required><option value="">Selecione o produto acima...</option></select></td>
+            <td><input type="number" class="input-qtd-saida" min="1" placeholder="Qtd" required></td>
+            <td><button type="button" class="btn btn-remover btn-acao-tabela" onclick="removerLinha(this)">X</button></td>
+        `;
+        tbody.appendChild(tr);
     }
 
-    function verificarProdutoExistente() {
-        const codDigitado = document.getElementById("entCodigo").value.trim();
-        if (!codDigitado) return;
-
-        const encontrado = listaProdutos.find(p => String(p.cod) === String(codDigitado));
-        if (encontrado) {
-            document.getElementById("entNomeProduto").value = encontrado.produto || "";
-            document.getElementById("entCategoria").value = encontrado.Categoria || "";
-            document.getElementById("entTipo").value = encontrado.TIPO || "";
-        }
-    }
-
-    function carregarValidadesSaida() {
-        const codSelecionado = document.getElementById("saiCodigoSelect").value;
-        const selectValidade = document.getElementById("saiValidadeSelect");
-
-        selectValidade.innerHTML = '<option value="">Selecione o lote específico...</option>';
+    function atualizarLotesSaida(selectProd) {
+        const codSelecionado = selectProd.value;
+        const tr = selectProd.closest('tr');
+        const selectLote = tr.querySelector('.select-lote');
+        selectLote.innerHTML = '<option value="">Selecione o lote específico...</option>';
 
         if (!codSelecionado) return;
 
         const lotes = listaProdutos.filter(prod => String(prod.cod) === String(codSelecionado));
-
         lotes.forEach(lote => {
             const dataFormatada = formatarDataExcel(lote.validade);
             const saldoDisponivel = lote["saldo atual"] || 0;
@@ -481,21 +463,31 @@
 
             const opt = document.createElement("option");
             opt.value = idLinha;
-            opt.textContent = `Linha ID [${idLinha}] — Validade: ${dataFormatada} | Saldo Disponível: ${saldoDisponivel} un.`;
-            selectValidade.appendChild(opt);
+            opt.textContent = `ID [${idLinha}] | Validade: ${dataFormatada} | Saldo: ${saldoDisponivel} un.`;
+            selectLote.appendChild(opt);
         });
     }
 
+    function removerLinha(btn) {
+        const tr = btn.closest('tr');
+        const tbody = tr.parentNode;
+        if (tbody.rows.length > 1) {
+            tr.remove();
+        } else {
+            alert('Você precisa manter pelo menos um item na lista.');
+        }
+    }
+
+    // --- TABELA CONSULTA E VALIDADES ---
     function pesquisarProdutos() {
         const termo = document.getElementById("inputBusca").value.toLowerCase().trim();
         const tbody = document.getElementById("tabelaConsulta");
         tbody.innerHTML = "";
 
         const filtrados = listaProdutos.filter(prod => {
-            const codStr = String(prod.cod || "").toLowerCase();
-            const prodStr = String(prod.produto || "").toLowerCase();
-            const idStr = String(prod.ID || "").toLowerCase();
-            return codStr.includes(termo) || prodStr.includes(termo) || idStr.includes(termo);
+            return String(prod.cod || "").toLowerCase().includes(termo) ||
+                   String(prod.produto || "").toLowerCase().includes(termo) ||
+                   String(prod.ID || "").toLowerCase().includes(termo);
         });
 
         if (filtrados.length === 0) {
@@ -510,11 +502,8 @@
             const statusValidade = prod["Status Validade"] || "☑️ OK";
             
             let badge = `<span class="badge-ok">${statusValidade}</span>`;
-            if (diasVencer <= 30 && diasVencer >= 0) {
-                badge = `<span class="badge-alerta">Vence em ${diasVencer} dias</span>`;
-            } else if (diasVencer < 0) {
-                badge = `<span class="badge-alerta">Vencido</span>`;
-            }
+            if (diasVencer <= 30 && diasVencer >= 0) badge = `<span class="badge-alerta">Vence em ${diasVencer} dias</span>`;
+            else if (diasVencer < 0) badge = `<span class="badge-alerta">Vencido</span>`;
 
             tr.innerHTML = `
                 <td><b>#${prod.ID || '-'}</b></td>
@@ -547,11 +536,8 @@
             const statusValidade = prod["Status Validade"] || "☑️ OK";
             
             let badge = `<span class="badge-ok">${statusValidade}</span>`;
-            if (diasVencer <= 30 && diasVencer >= 0) {
-                badge = `<span class="badge-alerta">Vence em ${diasVencer} dias</span>`;
-            } else if (diasVencer < 0) {
-                badge = `<span class="badge-alerta">Vencido</span>`;
-            }
+            if (diasVencer <= 30 && diasVencer >= 0) badge = `<span class="badge-alerta">Vence em ${diasVencer} dias</span>`;
+            else if (diasVencer < 0) badge = `<span class="badge-alerta">Vencido</span>`;
 
             tr.innerHTML = `
                 <td><b>#${prod.ID || '-'}</b></td>
@@ -566,24 +552,29 @@
         });
     }
 
-    // Processar Envio de Entrada
+    // --- ENVIAR ENTRADA PARA POWER AUTOMATE ---
     document.getElementById("entradaForm").addEventListener("submit", async (e) => {
         e.preventDefault();
         const btn = document.getElementById("btnEntrada");
         const status = document.getElementById("statusEntrada");
 
+        const linhas = document.querySelectorAll('#tabelaItensEntradaBody tr');
+        let itens = [];
+
+        linhas.forEach(linha => {
+            itens.push({
+                codigo: linha.querySelector('.input-cod').value.trim(),
+                produto: linha.querySelector('.input-nome').value.trim(),
+                quantidade: parseInt(linha.querySelector('.input-qtd').value, 10),
+                validade: linha.querySelector('.input-val').value
+            });
+        });
+
         const payload = {
             acao: "entrada",
             requisicao: document.getElementById("entRequisicao").value.trim(),
             turma: document.getElementById("entTurma").value.trim(),
-            itens: [{
-                codigo: document.getElementById("entCodigo").value.trim(),
-                produto: document.getElementById("entNomeProduto").value.trim(),
-                categoria: document.getElementById("entCategoria").value.trim(),
-                tipo: document.getElementById("entTipo").value.trim(),
-                quantidade: parseInt(document.getElementById("entQuantidade").value, 10),
-                validade: document.getElementById("entValidade").value
-            }]
+            itens: itens
         };
 
         btn.disabled = true;
@@ -597,34 +588,43 @@
                 body: JSON.stringify(payload)
             });
             if (res.ok) {
-                status.textContent = "Entrada registrada com sucesso!";
+                status.textContent = "Entrada processada com sucesso!";
                 status.className = "status-msg sucesso";
                 document.getElementById("entradaForm").reset();
+                document.getElementById("tabelaItensEntradaBody").innerHTML = "";
+                adicionarLinhaEntrada();
             } else { throw new Error(); }
         } catch {
             status.textContent = "Erro ao registrar entrada.";
             status.className = "status-msg erro";
         } finally {
             btn.disabled = false;
-            btn.textContent = "Processar Entrada";
+            btn.textContent = "Processar Entrada no Estoque";
         }
     });
 
-    // Processar Envio de Saída
+    // --- ENVIAR SAÍDA PARA POWER AUTOMATE ---
     document.getElementById("saidaForm").addEventListener("submit", async (e) => {
         e.preventDefault();
         const btn = document.getElementById("btnSaida");
         const status = document.getElementById("statusSaida");
 
+        const linhas = document.querySelectorAll('#tabelaItensSaidaBody tr');
+        let itens = [];
+
+        linhas.forEach(linha => {
+            itens.push({
+                idLinha: linha.querySelector('.select-lote').value,
+                codigo: linha.querySelector('.select-produto').value,
+                quantidade: parseInt(linha.querySelector('.input-qtd-saida').value, 10)
+            });
+        });
+
         const payload = {
             acao: "saida",
             requisicao: document.getElementById("saiRequisicao").value.trim(),
             turma: document.getElementById("saiTurma").value.trim(),
-            itens: [{
-                idLinha: document.getElementById("saiValidadeSelect").value,
-                codigo: document.getElementById("saiCodigoSelect").value,
-                quantidade: parseInt(document.getElementById("saiQuantidade").value, 10)
-            }]
+            itens: itens
         };
 
         btn.disabled = true;
@@ -638,17 +638,18 @@
                 body: JSON.stringify(payload)
             });
             if (res.ok) {
-                status.textContent = "Saída registrada com sucesso!";
+                status.textContent = "Saída processada com sucesso!";
                 status.className = "status-msg sucesso";
                 document.getElementById("saidaForm").reset();
-                document.getElementById("saiValidadeSelect").innerHTML = '<option value="">Primeiro selecione um produto acima...</option>';
+                document.getElementById("tabelaItensSaidaBody").innerHTML = "";
+                adicionarLinhaSaida();
             } else { throw new Error(); }
         } catch {
             status.textContent = "Erro ao registrar saída.";
             status.className = "status-msg erro";
         } finally {
             btn.disabled = false;
-            btn.textContent = "Processar Saída";
+            btn.textContent = "Processar Saída no Estoque";
         }
     });
 
@@ -657,5 +658,3 @@
 
 </body>
 </html>
-
-
