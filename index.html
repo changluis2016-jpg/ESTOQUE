@@ -340,20 +340,22 @@
                 pesquisarProdutos();
             }
 
-            // 2. Carrega a Base de Cadastro Oficial em segundo plano
+            // 2. Carrega a Base de Cadastro Oficial
             const resCadastro = await fetch(urlBaseCadastroJson);
             if (resCadastro.ok) {
-                listaBaseCadastro = await resCadastro.json();
+                const rawData = await resCadastro.json();
+                listaBaseCadastro = Array.isArray(rawData) ? rawData : (rawData.BASE_CADASTRO || []);
                 
-                // Atualiza o selo no topo indicando que carregou com sucesso
                 const badge = document.getElementById("statusBadgeGitHub");
-                badge.innerHTML = '<span class="dot-green"></span> Sincronizado com GitHub';
+                if (badge) badge.innerHTML = '<span class="dot-green"></span> Base Cadastrada OK';
+            } else {
+                throw new Error("Erro ao ler base_cadastro.json");
             }
 
         } catch (erro) {
             console.error("Erro ao carregar arquivos JSON:", erro);
             const badge = document.getElementById("statusBadgeGitHub");
-            badge.innerHTML = '<span class="dot-yellow"></span> Erro ao carregar base';
+            if (badge) badge.innerHTML = '<span class="dot-yellow"></span> Verifique base_cadastro.json';
         }
     }
 
@@ -411,12 +413,12 @@
         });
     }
 
-    // --- ENTRADA MULTIPLA COM BUSCA DUPLA (ESTOQUE + CADASTRO) ---
+    // --- ENTRADA MULTIPLA COM BUSCA DUPLA ULTRA FLEXÍVEL ---
     function adicionarLinhaEntrada() {
         const tbody = document.getElementById('tabelaItensEntradaBody');
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><input type="text" class="input-cod" placeholder="Ex: 1004" onblur="preencherNomeProduto(this)" required></td>
+            <td><input type="text" class="input-cod" placeholder="Ex: 1004" onblur="preencherNomeProduto(this)" onkeyup="if(event.key==='Enter') preencherNomeProduto(this)" required></td>
             <td><input type="text" class="input-nome" placeholder="Nome do produto" required></td>
             <td><input type="number" class="input-qtd" min="1" placeholder="Qtd" required></td>
             <td><input type="date" class="input-val" required></td>
@@ -431,10 +433,10 @@
         const tr = input.closest('tr');
         
         // 1. Procura no estoque atual (dados.json)
-        let encontradoEstoque = listaProdutos.find(p => String(p.cod) === String(cod));
+        let encontradoEstoque = listaProdutos.find(p => String(p.cod) === String(cod) || String(p.COD) === String(cod));
         
         if (encontradoEstoque) {
-            tr.querySelector('.input-nome').value = encontradoEstoque.produto || "";
+            tr.querySelector('.input-nome').value = encontradoEstoque.produto || encontradoEstoque.DESCRICAO || "";
             return;
         }
 
@@ -442,7 +444,7 @@
         let encontradoBase = listaBaseCadastro.find(p => String(p.COD) === String(cod) || String(p.cod) === String(cod));
         
         if (encontradoBase) {
-            tr.querySelector('.input-nome').value = encontradoBase.DESCRICAO || encontradoBase.produto || "";
+            tr.querySelector('.input-nome').value = encontradoBase.DESCRICAO || encontradoBase.produto || encontradoBase.Descrição || "";
         } else {
             tr.querySelector('.input-nome').value = "";
         }
@@ -456,8 +458,9 @@
         let optionsProdutos = '<option value="">Selecione o produto...</option>';
         const codigosUnicos = {};
         listaProdutos.forEach(prod => {
-            if (!codigosUnicos[prod.cod]) {
-                codigosUnicos[prod.cod] = prod.produto || 'Produto';
+            const codigo = prod.cod || prod.COD;
+            if (codigo && !codigosUnicos[codigo]) {
+                codigosUnicos[codigo] = prod.produto || prod.DESCRICAO || 'Produto';
             }
         });
         for (const [cod, nome] of Object.entries(codigosUnicos)) {
@@ -481,7 +484,7 @@
 
         if (!codSelecionado) return;
 
-        const lotes = listaProdutos.filter(prod => String(prod.cod) === String(codSelecionado));
+        const lotes = listaProdutos.filter(prod => String(prod.cod || prod.COD) === String(codSelecionado));
         lotes.forEach(lote => {
             const dataFormatada = formatarDataExcel(lote.validade);
             const saldoDisponivel = lote["saldo atual"] || 0;
@@ -511,8 +514,8 @@
         tbody.innerHTML = "";
 
         const filtrados = listaProdutos.filter(prod => {
-            return String(prod.cod || "").toLowerCase().includes(termo) ||
-                   String(prod.produto || "").toLowerCase().includes(termo) ||
+            return String(prod.cod || prod.COD || "").toLowerCase().includes(termo) ||
+                   String(prod.produto || prod.DESCRICAO || "").toLowerCase().includes(termo) ||
                    String(prod.ID || "").toLowerCase().includes(termo);
         });
 
@@ -533,8 +536,8 @@
 
             tr.innerHTML = `
                 <td><b>#${prod.ID || '-'}</b></td>
-                <td><b>${prod.cod}</b></td>
-                <td>${prod.produto || '-'}</td>
+                <td><b>${prod.cod || prod.COD}</b></td>
+                <td>${prod.produto || prod.DESCRICAO || '-'}</td>
                 <td>${prod.Categoria || '-'}</td>
                 <td>${prod.TIPO || '-'}</td>
                 <td><b>${prod["saldo atual"] || 0}</b></td>
@@ -567,8 +570,8 @@
 
             tr.innerHTML = `
                 <td><b>#${prod.ID || '-'}</b></td>
-                <td>${prod.cod}</td>
-                <td>${prod.produto || '-'}</td>
+                <td>${prod.cod || prod.COD}</td>
+                <td>${prod.produto || prod.DESCRICAO || '-'}</td>
                 <td>${prod["saldo atual"] || 0}</td>
                 <td>${dataValidadeFormatada}</td>
                 <td>${diasVencer} dias</td>
