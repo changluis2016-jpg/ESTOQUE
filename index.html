@@ -301,6 +301,22 @@
         return `${dia}/${mes}/${ano}`;
     }
 
+    // Función nueva para convertir la fecha del input (AAAA-MM-DD) al formato del Excel (ej: dez/26)
+    function formatarDataParaPadraoExcel(dataString) {
+        if (!dataString) return "";
+        let partes = dataString.split("-"); // Espera formato AAAA-MM-DD
+        if (partes.length !== 3) return dataString;
+
+        let ano = partes[0].slice(-2); // Pega os 2 últimos dígitos do ano (ex: 2026 -> 26)
+        let mesIndex = parseInt(partes[1], 10) - 1;
+        
+        const meses = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+        if (mesIndex >= 0 && mesIndex < 12) {
+            return `${meses[mesIndex]}/${ano}`;
+        }
+        return dataString;
+    }
+
     function mudarAba(aba, evt) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -586,6 +602,10 @@
             const codigo = String(linha.querySelector('.input-cod').value.trim());
             const nomeInput = String(linha.querySelector('.input-nome').value.trim());
             
+            // Formatea la fecha del input al formato del Excel (ej: dez/26) antes de meterla al JSON
+            const dataInputRaw = linha.querySelector('.input-val').value;
+            const validadeFormatada = formatarDataParaPadraoExcel(dataInputRaw);
+            
             // Búsqueda exhaustiva en ambas bases de datos
             let prodBase = listaCadastros.find(p => String(p.COD || p.cod) === codigo) || 
                            listaProdutos.find(p => String(p.COD || p.cod) === codigo);
@@ -603,7 +623,7 @@
                 DESCRICAO: nomeProduto,
                 DESCRIPÇAO: nomeProduto,
                 quantidade: Number(linha.querySelector('.input-qtd').value),
-                validade: String(linha.querySelector('.input-val').value),
+                validade: validadeFormatada, // <-- Aquí ya va formateado exactamente como el Excel (ej: dez/26)
                 categoria: categoriaItem,
                 Categoria: categoriaItem,
                 CATEGORIA: categoriaItem,
