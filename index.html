@@ -19,6 +19,7 @@
         .header-actions { display: flex; gap: 10px; }
         .status-badge-header { background-color: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 15px; border-radius: 20px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
         .dot-green { width: 8px; height: 8px; background-color: #22c55e; border-radius: 50%; display: inline-block; }
+        .dot-yellow { width: 8px; height: 8px; background-color: #eab308; border-radius: 50%; display: inline-block; }
 
         /* Estrutura Principal */
         .main-container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
@@ -58,7 +59,7 @@
         .btn-add-linha { background-color: #2563eb; margin-bottom: 15px; }
         .btn-add-linha:hover { background-color: #1d4ed8; }
         .btn-remover { background-color: #dc2626; color: white; }
-        .btn-remover:hover { background-color: #b91c1c; }
+        .btn-remover:hover { background-color: #c0392b; }
 
         .status-msg { margin-top: 15px; text-align: center; font-weight: 600; font-size: 14px; }
         .status-msg.sucesso { color: #16a34a; }
@@ -87,8 +88,8 @@
             </div>
         </div>
         <div class="header-actions">
-            <div class="status-badge-header">
-                <span class="dot-green"></span> Sincronizado com GitHub
+            <div class="status-badge-header" id="statusBadgeGitHub">
+                <span class="dot-yellow" id="dotStatus"></span> Carregando Base...
             </div>
         </div>
     </header>
@@ -329,7 +330,7 @@
 
     async function carregarDados() {
         try {
-            // Carrega o Estoque Atual
+            // 1. Carrega o Estoque Atual
             const resposta = await fetch(urlDadosJson);
             if (resposta.ok) {
                 const dadosBrutos = await resposta.json();
@@ -339,15 +340,20 @@
                 pesquisarProdutos();
             }
 
-            // Carrega a Base de Cadastro Oficial
+            // 2. Carrega a Base de Cadastro Oficial em segundo plano
             const resCadastro = await fetch(urlBaseCadastroJson);
             if (resCadastro.ok) {
-                const cadastroBruto = await resCadastro.json();
-                listaBaseCadastro = cadastroBruto.BASE_CADASTRO || cadastroBruto;
+                listaBaseCadastro = await resCadastro.json();
+                
+                // Atualiza o selo no topo indicando que carregou com sucesso
+                const badge = document.getElementById("statusBadgeGitHub");
+                badge.innerHTML = '<span class="dot-green"></span> Sincronizado com GitHub';
             }
 
         } catch (erro) {
             console.error("Erro ao carregar arquivos JSON:", erro);
+            const badge = document.getElementById("statusBadgeGitHub");
+            badge.innerHTML = '<span class="dot-yellow"></span> Erro ao carregar base';
         }
     }
 
@@ -432,7 +438,7 @@
             return;
         }
 
-        // 2. Procura na Base de Cadastro Oficial (base_cadastro.json) lendo as chaves maiúsculas do arquivo
+        // 2. Procura na Base de Cadastro Oficial (base_cadastro.json)
         let encontradoBase = listaBaseCadastro.find(p => String(p.COD) === String(cod) || String(p.cod) === String(cod));
         
         if (encontradoBase) {
