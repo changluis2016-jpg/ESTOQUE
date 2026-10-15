@@ -584,21 +584,32 @@
 
         linhas.forEach(linha => {
             const codigo = String(linha.querySelector('.input-cod').value.trim());
+            const nomeInput = String(linha.querySelector('.input-nome').value.trim());
             
-            // Busca categoria e tipo correspondentes na base cadastrada ou no estoque atual para evitar o erro 400
+            // Búsqueda exhaustiva en ambas bases de datos
             let prodBase = listaCadastros.find(p => String(p.COD || p.cod) === codigo) || 
                            listaProdutos.find(p => String(p.COD || p.cod) === codigo);
 
+            let nomeProduto = nomeInput || (prodBase ? (prodBase.DESCRIPÇAO || prodBase.DESCRICAO || prodBase.produto || prodBase.Descrição || "") : "");
             let categoriaItem = prodBase ? (prodBase.CATEGORIA || prodBase.Categoria || "DIVERSOS") : "DIVERSOS";
-            let tipoItem = prodBase ? (prodBase.TIPO || prodBase.tipo || "UN") : "UN";
+            let tipoItem = prodBase ? (prodBase.UNIDADE || prodBase.TIPO || prodBase.tipo || "UN") : "UN";
 
+            // Se envía con todas las nomenclaturas estándar que Power Automate pueda mapear
             itens.push({
                 codigo: codigo,
-                produto: String(linha.querySelector('.input-nome').value.trim()),
+                cod: codigo,
+                COD: codigo,
+                produto: nomeProduto,
+                DESCRICAO: nomeProduto,
+                DESCRIPÇAO: nomeProduto,
                 quantidade: Number(linha.querySelector('.input-qtd').value),
                 validade: String(linha.querySelector('.input-val').value),
                 categoria: categoriaItem,
-                tipo: tipoItem
+                Categoria: categoriaItem,
+                CATEGORIA: categoriaItem,
+                tipo: tipoItem,
+                TIPO: tipoItem,
+                UNIDADE: tipoItem
             });
         });
 
