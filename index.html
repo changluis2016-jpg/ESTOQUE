@@ -61,9 +61,9 @@
         .btn-remover { background-color: #dc2626; color: white; }
         .btn-remover:hover { background-color: #c0392b; }
 
-        .status-msg { margin-top: 15px; text-align: center; font-weight: 600; font-size: 14px; }
-        .status-msg.sucesso { color: #16a34a; }
-        .status-msg.erro { color: #dc2626; }
+        .status-msg { margin-top: 15px; text-align: center; font-weight: 600; font-size: 14px; padding: 10px; border-radius: 6px; display: none; }
+        .status-msg.sucesso { color: #16a34a; background-color: #f0fdf4; border: 1px solid #bbf7d0; display: block; }
+        .status-msg.erro { color: #dc2626; background-color: #fef2f2; border: 1px solid #fecaca; display: block; }
 
         /* Tabelas */
         .table-responsive { overflow-x: auto; max-height: 450px; }
@@ -265,7 +265,6 @@
 
 <script>
     const urlDadosJson = "https://raw.githubusercontent.com/changluis2016-jpg/ESTOQUE/main/dados.json";
-    // Atualizado para buscar exatamente o cadastros.json (no plural)
     const urlCadastrosJson = "https://raw.githubusercontent.com/changluis2016-jpg/ESTOQUE/main/cadastros.json";
     const urlPowerAutomateEntrada = "https://default554116b687be480a9e3aa0e9e1a653.4b.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/02/workflows/53a06847ff1a435baa429b1692cfc84f/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=6J_jbnw0N4Ji2DKpAYDQEhNjpGpNRYUdKmueyuuXmrs";
     const urlPowerAutomateSaida = "COLE_AQUI_A_URL_DO_POWER_AUTOMATE_SAIDA";
@@ -327,7 +326,6 @@
 
     async function carregarDados() {
         try {
-            // 1. Carrega o Estoque Atual (dados.json)
             const resposta = await fetch(urlDadosJson);
             if (resposta.ok) {
                 const dadosBrutos = await resposta.json();
@@ -337,7 +335,6 @@
                 pesquisarProdutos();
             }
 
-            // 2. Carrega a Base Geral de Cadastros (cadastros.json)
             const resCadastro = await fetch(urlCadastrosJson);
             if (resCadastro.ok) {
                 const rawData = await resCadastro.json();
@@ -410,7 +407,6 @@
         });
     }
 
-    // --- ENTRADA DE MATERIAL COM BUSCA INTEGRADA (dados.json + cadastros.json) ---
     function adicionarLinhaEntrada() {
         const tbody = document.getElementById('tabelaItensEntradaBody');
         const tr = document.createElement('tr');
@@ -430,20 +426,14 @@
         const tr = input.closest('tr');
         const inputNome = tr.querySelector('.input-nome');
         
-        // 1. Procura primeiro no estoque atual (dados.json)
-        let encontradoEstoque = listaProdutos.find(p => 
-            String(p.cod || p.COD) === String(cod)
-        );
+        let encontradoEstoque = listaProdutos.find(p => String(p.cod || p.COD) === String(cod));
         
         if (encontradoEstoque) {
             inputNome.value = encontradoEstoque.produto || encontradoEstoque.DESCRIPÇAO || encontradoEstoque.DESCRICAO || encontradoEstoque.Descrição || "";
             return;
         }
 
-        // 2. Procura no catálogo geral (cadastros.json) contemplando a chave "DESCRIPÇAO" com ç
-        let encontradoCadastro = listaCadastros.find(p => 
-            String(p.COD || p.cod) === String(cod)
-        );
+        let encontradoCadastro = listaCadastros.find(p => String(p.COD || p.cod) === String(cod));
         
         if (encontradoCadastro) {
             inputNome.value = encontradoCadastro.DESCRIPÇAO || encontradoCadastro.DESCRICAO || encontradoCadastro.produto || encontradoCadastro.descricao || "";
@@ -453,7 +443,6 @@
         }
     }
 
-    // --- SAÍDA DE MATERIAL ---
     function adicionarLinhaSaida() {
         const tbody = document.getElementById('tabelaItensSaidaBody');
         const tr = document.createElement('tr');
@@ -510,7 +499,6 @@
         }
     }
 
-    // --- TABELA CONSULTA E VALIDADES ---
     function pesquisarProdutos() {
         const termo = document.getElementById("inputBusca").value.toLowerCase().trim();
         const tbody = document.getElementById("tabelaConsulta");
@@ -595,23 +583,24 @@
 
         linhas.forEach(linha => {
             itens.push({
-                codigo: linha.querySelector('.input-cod').value.trim(),
-                produto: linha.querySelector('.input-nome').value.trim(),
-                quantidade: parseInt(linha.querySelector('.input-qtd').value, 10),
-                validade: linha.querySelector('.input-val').value
+                codigo: String(linha.querySelector('.input-cod').value.trim()),
+                produto: String(linha.querySelector('.input-nome').value.trim()),
+                quantidade: Number(linha.querySelector('.input-qtd').value),
+                validade: String(linha.querySelector('.input-val').value)
             });
         });
 
         const payload = {
             acao: "entrada",
-            requisicao: document.getElementById("entRequisicao").value.trim(),
-            turma: document.getElementById("entTurma").value.trim(),
+            requisicao: String(document.getElementById("entRequisicao").value.trim()),
+            turma: String(document.getElementById("entTurma").value.trim()),
             itens: itens
         };
 
         btn.disabled = true;
         btn.textContent = "Processando...";
-        status.textContent = "";
+        status.textContent = "Enviando dados para o fluxo...";
+        status.className = "status-msg";
 
         try {
             const res = await fetch(urlPowerAutomateEntrada, {
@@ -619,69 +608,24 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
             });
+
             if (res.ok) {
-                status.textContent = "Entrada processada com sucesso!";
+                status.textContent = "✅ Entrada processada e enviada com sucesso!";
                 status.className = "status-msg sucesso";
                 document.getElementById("entradaForm").reset();
                 document.getElementById("tabelaItensEntradaBody").innerHTML = "";
                 adicionarLinhaEntrada();
-            } else { throw new Error(); }
-        } catch {
-            status.textContent = "Erro ao registrar entrada.";
+            } else {
+                const erroTexto = await res.text();
+                throw new Error(`Erro ${res.status}: ${erroTexto}`);
+            }
+        } catch (erro) {
+            console.error("Detalhe do erro:", erro);
+            status.textContent = "❌ " + erro.message;
             status.className = "status-msg erro";
         } finally {
             btn.disabled = false;
             btn.textContent = "Processar Entrada no Estoque";
-        }
-    });
-
-    // --- ENVIAR SAÍDA PARA POWER AUTOMATE ---
-    document.getElementById("saidaForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById("btnSaida");
-        const status = document.getElementById("statusSaida");
-
-        const linhas = document.querySelectorAll('#tabelaItensSaidaBody tr');
-        let itens = [];
-
-        linhas.forEach(linha => {
-            itens.push({
-                idLinha: linha.querySelector('.select-lote').value,
-                codigo: linha.querySelector('.select-produto').value,
-                quantidade: parseInt(linha.querySelector('.input-qtd-saida').value, 10)
-            });
-        });
-
-        const payload = {
-            acao: "saida",
-            requisicao: document.getElementById("saiRequisicao").value.trim(),
-            turma: document.getElementById("saiTurma").value.trim(),
-            itens: itens
-        };
-
-        btn.disabled = true;
-        btn.textContent = "Processando...";
-        status.textContent = "";
-
-        try {
-            const res = await fetch(urlPowerAutomateSaida, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-            if (res.ok) {
-                status.textContent = "Saída processada com sucesso!";
-                status.className = "status-msg sucesso";
-                document.getElementById("saidaForm").reset();
-                document.getElementById("tabelaItensSaidaBody").innerHTML = "";
-                adicionarLinhaSaida();
-            } else { throw new Error(); }
-        } catch {
-            status.textContent = "Erro ao registrar saída.";
-            status.className = "status-msg erro";
-        } finally {
-            btn.disabled = false;
-            btn.textContent = "Processar Saída no Estoque";
         }
     });
 
