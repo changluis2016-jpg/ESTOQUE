@@ -133,7 +133,7 @@
             <div id="aba-consulta" class="tab-content active">
                 <div class="form-group">
                     <label>Pesquisar por Código ou Descrição do Produto:</label>
-                    <input type="text" id="inputBusca" placeholder="Digite o código (ex: 1003) ou descrição do produto..." onkeyup="pesquisarProdutos()">
+                    <input type="text" id="inputBusca" placeholder="Digite o código (ex: 893) ou descrição do produto..." onkeyup="pesquisarProdutos()">
                 </div>
                 <div class="table-responsive">
                     <table>
@@ -157,7 +157,7 @@
                 </div>
             </div>
 
-            <!-- ABA 2: ENTRADA DE MATERIAL (MULTIPLOS ITENS COM BUSCA INTELIGENTE) -->
+            <!-- ABA 2: ENTRADA DE MATERIAL -->
             <div id="aba-entrada" class="tab-content">
                 <form id="entradaForm">
                     <div class="form-grid">
@@ -189,9 +189,7 @@
                                     <th style="width: 10%;">Ação</th>
                                 </tr>
                             </thead>
-                            <tbody id="tabelaItensEntradaBody">
-                                <!-- Preenchido via JavaScript -->
-                            </tbody>
+                            <tbody id="tabelaItensEntradaBody"></tbody>
                         </table>
                     </div>
 
@@ -200,7 +198,7 @@
                 <div id="statusEntrada" class="status-msg"></div>
             </div>
 
-            <!-- ABA 3: SAÍDA DE MATERIAL (MULTIPLOS ITENS) -->
+            <!-- ABA 3: SAÍDA DE MATERIAL -->
             <div id="aba-saida" class="tab-content">
                 <form id="saidaForm">
                     <div class="form-grid">
@@ -231,9 +229,7 @@
                                     <th style="width: 10%;">Ação</th>
                                 </tr>
                             </thead>
-                            <tbody id="tabelaItensSaidaBody">
-                                <!-- Preenchido via JavaScript -->
-                            </tbody>
+                            <tbody id="tabelaItensSaidaBody"></tbody>
                         </table>
                     </div>
 
@@ -269,17 +265,18 @@
 
 <script>
     const urlDadosJson = "https://raw.githubusercontent.com/changluis2016-jpg/ESTOQUE/main/dados.json";
-    const urlBaseCadastroJson = "https://raw.githubusercontent.com/changluis2016-jpg/ESTOQUE/main/base_cadastro.json";
+    // Atualizado para buscar exatamente o cadastros.json (no plural)
+    const urlCadastrosJson = "https://raw.githubusercontent.com/changluis2016-jpg/ESTOQUE/main/cadastros.json";
     const urlPowerAutomateEntrada = "https://default554116b687be480a9e3aa0e9e1a653.4b.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/02/workflows/53a06847ff1a435baa429b1692cfc84f/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=6J_jbnw0N4Ji2DKpAYDQEhNjpGpNRYUdKmueyuuXmrs";
     const urlPowerAutomateSaida = "COLE_AQUI_A_URL_DO_POWER_AUTOMATE_SAIDA";
 
     const categoriasOficiais = [
         "BELEZA", "HOSPITALAR", "DESCARTÁVEIS", "ESTÉTICA", "ARTESANATO",
-        "PAPELARIA E SUPRIMENTOS", "DIVERSOS", "CULINÁRIA", "CONSERVAÇÃO E LIMPEZA", "MODA"
+        "PAPELARIA E SUPRIMENTOS", "DIVERSOS", "CULINÁRIA", "CONSERVAÇÃO E LIMPEZA", "MODA", "GÊNERO ALIMENTÍCIO", "LIVROS"
     ];
 
     let listaProdutos = [];
-    let listaBaseCadastro = [];
+    let listaCadastros = [];
     let meugrafico = null;
 
     function formatarDataExcel(serial) {
@@ -330,7 +327,7 @@
 
     async function carregarDados() {
         try {
-            // 1. Carrega o Estoque Atual
+            // 1. Carrega o Estoque Atual (dados.json)
             const resposta = await fetch(urlDadosJson);
             if (resposta.ok) {
                 const dadosBrutos = await resposta.json();
@@ -340,22 +337,22 @@
                 pesquisarProdutos();
             }
 
-            // 2. Carrega a Base de Cadastro Oficial
-            const resCadastro = await fetch(urlBaseCadastroJson);
+            // 2. Carrega a Base Geral de Cadastros (cadastros.json)
+            const resCadastro = await fetch(urlCadastrosJson);
             if (resCadastro.ok) {
                 const rawData = await resCadastro.json();
-                listaBaseCadastro = Array.isArray(rawData) ? rawData : (rawData.BASE_CADASTRO || rawData);
+                listaCadastros = Array.isArray(rawData) ? rawData : (rawData.cadastros || rawData.ESTOQUE || []);
                 
                 const badge = document.getElementById("statusBadgeGitHub");
                 if (badge) badge.innerHTML = '<span class="dot-green"></span> Base Cadastrada OK';
             } else {
-                throw new Error("Erro ao ler base_cadastro.json");
+                throw new Error("Erro ao ler cadastros.json");
             }
 
         } catch (erro) {
             console.error("Erro ao carregar arquivos JSON:", erro);
             const badge = document.getElementById("statusBadgeGitHub");
-            if (badge) badge.innerHTML = '<span class="dot-yellow"></span> Verifique base_cadastro.json';
+            if (badge) badge.innerHTML = '<span class="dot-yellow"></span> Verifique cadastros.json';
         }
     }
 
@@ -364,7 +361,7 @@
         let totalQtd = 0, criticos = 0;
 
         listaProdutos.forEach(prod => {
-            const saldo = parseInt(prod["saldo atual"] || 0, 10);
+            const saldo = parseInt(prod["saldo atual"] || prod["SALDO ATUAL"] || 0, 10);
             const diasVencer = prod["Dias p/ Vencer"] !== undefined ? parseInt(prod["Dias p/ Vencer"], 10) : 999;
             totalQtd += saldo;
             if (diasVencer <= 30) criticos++;
@@ -379,15 +376,15 @@
         categoriasOficiais.forEach(cat => categoriasMap[cat] = 0);
 
         listaProdutos.forEach(prod => {
-            let cat = (prod.Categoria || "DIVERSOS").trim().toUpperCase();
+            let cat = (prod.Categoria || prod.CATEGORIA || "DIVERSOS").trim().toUpperCase();
             if (cat.includes("LIMPEZA") || cat.includes("CONSERVACAO")) cat = "CONSERVAÇÃO E LIMPEZA";
-            else if (cat.includes("CULINARIA")) cat = "CULINÁRIA";
+            else if (cat.includes("CULINARIA") || cat.includes("ALIMENTICIO")) cat = "CULINÁRIA";
             else if (cat.includes("DESCARTAVEL")) cat = "DESCARTÁVEIS";
             else if (cat.includes("ESTETICA")) cat = "ESTÉTICA";
             else if (cat.includes("PAPELARIA")) cat = "PAPELARIA E SUPRIMENTOS";
 
             if (!categoriasMap.hasOwnProperty(cat)) cat = "DIVERSOS";
-            categoriasMap[cat] += parseInt(prod["saldo atual"] || 0, 10);
+            categoriasMap[cat] += parseInt(prod["saldo atual"] || prod["SALDO ATUAL"] || 0, 10);
         });
 
         const ctx = document.getElementById('categoriaChart').getContext('2d');
@@ -413,12 +410,12 @@
         });
     }
 
-    // --- ENTRADA MULTIPLA COM BUSCA DUPLA INTELIGENTE (ESTOQUE + BASE CADASTRO) ---
+    // --- ENTRADA DE MATERIAL COM BUSCA INTEGRADA (dados.json + cadastros.json) ---
     function adicionarLinhaEntrada() {
         const tbody = document.getElementById('tabelaItensEntradaBody');
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><input type="text" class="input-cod" placeholder="Ex: 1004" onblur="preencherNomeProduto(this)" onkeyup="if(event.key==='Enter') preencherNomeProduto(this)" required></td>
+            <td><input type="text" class="input-cod" placeholder="Ex: 893" onblur="preencherNomeProduto(this)" onkeyup="if(event.key==='Enter') preencherNomeProduto(this)" required></td>
             <td><input type="text" class="input-nome" placeholder="Nome do produto (Autopreenchido)" required></td>
             <td><input type="number" class="input-qtd" min="1" placeholder="Qtd" required></td>
             <td><input type="date" class="input-val" required></td>
@@ -434,25 +431,29 @@
         const inputNome = tr.querySelector('.input-nome');
         
         // 1. Procura primeiro no estoque atual (dados.json)
-        let encontradoEstoque = listaProdutos.find(p => String(p.cod) === String(cod) || String(p.COD) === String(cod));
+        let encontradoEstoque = listaProdutos.find(p => 
+            String(p.cod || p.COD) === String(cod)
+        );
         
         if (encontradoEstoque) {
-            inputNome.value = encontradoEstoque.produto || encontradoEstoque.DESCRICAO || encontradoEstoque.Descrição || "";
+            inputNome.value = encontradoEstoque.produto || encontradoEstoque.DESCRIPÇAO || encontradoEstoque.DESCRICAO || encontradoEstoque.Descrição || "";
             return;
         }
 
-        // 2. Se não estiver no estoque, procura na Base de Cadastro Oficial (base_cadastro.json)
-        let encontradoBase = listaBaseCadastro.find(p => String(p.COD) === String(cod) || String(p.cod) === String(cod));
+        // 2. Procura no catálogo geral (cadastros.json) contemplando a chave "DESCRIPÇAO" com ç
+        let encontradoCadastro = listaCadastros.find(p => 
+            String(p.COD || p.cod) === String(cod)
+        );
         
-        if (encontradoBase) {
-            inputNome.value = encontradoBase.DESCRICAO || encontradoBase.produto || encontradoBase.Descrição || "";
+        if (encontradoCadastro) {
+            inputNome.value = encontradoCadastro.DESCRIPÇAO || encontradoCadastro.DESCRICAO || encontradoCadastro.produto || encontradoCadastro.descricao || "";
         } else {
             inputNome.value = "";
             inputNome.placeholder = "⚠️ Código não encontrado nas bases";
         }
     }
 
-    // --- SAÍDA MULTIPLA ---
+    // --- SAÍDA DE MATERIAL ---
     function adicionarLinhaSaida() {
         const tbody = document.getElementById('tabelaItensSaidaBody');
         const tr = document.createElement('tr');
@@ -462,7 +463,7 @@
         listaProdutos.forEach(prod => {
             const codigo = prod.cod || prod.COD;
             if (codigo && !codigosUnicos[codigo]) {
-                codigosUnicos[codigo] = prod.produto || prod.DESCRICAO || 'Produto';
+                codigosUnicos[codigo] = prod.produto || prod.DESCRIPÇAO || prod.DESCRICAO || 'Produto';
             }
         });
         for (const [cod, nome] of Object.entries(codigosUnicos)) {
@@ -489,7 +490,7 @@
         const lotes = listaProdutos.filter(prod => String(prod.cod || prod.COD) === String(codSelecionado));
         lotes.forEach(lote => {
             const dataFormatada = formatarDataExcel(lote.validade);
-            const saldoDisponivel = lote["saldo atual"] || 0;
+            const saldoDisponivel = lote["saldo atual"] || lote["SALDO ATUAL"] || 0;
             const idLinha = lote.ID || "";
 
             const opt = document.createElement("option");
@@ -517,7 +518,7 @@
 
         const filtrados = listaProdutos.filter(prod => {
             return String(prod.cod || prod.COD || "").toLowerCase().includes(termo) ||
-                   String(prod.produto || prod.DESCRICAO || "").toLowerCase().includes(termo) ||
+                   String(prod.produto || prod.DESCRIPÇAO || prod.DESCRICAO || "").toLowerCase().includes(termo) ||
                    String(prod.ID || "").toLowerCase().includes(termo);
         });
 
@@ -539,10 +540,10 @@
             tr.innerHTML = `
                 <td><b>#${prod.ID || '-'}</b></td>
                 <td><b>${prod.cod || prod.COD}</b></td>
-                <td>${prod.produto || prod.DESCRICAO || '-'}</td>
-                <td>${prod.Categoria || '-'}</td>
+                <td>${prod.produto || prod.DESCRIPÇAO || prod.DESCRICAO || '-'}</td>
+                <td>${prod.Categoria || prod.CATEGORIA || '-'}</td>
                 <td>${prod.TIPO || '-'}</td>
-                <td><b>${prod["saldo atual"] || 0}</b></td>
+                <td><b>${prod["saldo atual"] || prod["SALDO ATUAL"] || 0}</b></td>
                 <td>${dataValidadeFormatada}</td>
                 <td>${diasVencer !== 999 ? diasVencer + ' dias' : '-'}</td>
                 <td>${badge}</td>
@@ -573,8 +574,8 @@
             tr.innerHTML = `
                 <td><b>#${prod.ID || '-'}</b></td>
                 <td>${prod.cod || prod.COD}</td>
-                <td>${prod.produto || prod.DESCRICAO || '-'}</td>
-                <td>${prod["saldo atual"] || 0}</td>
+                <td>${prod.produto || prod.DESCRIPÇAO || prod.DESCRICAO || '-'}</td>
+                <td>${prod["saldo atual"] || prod["SALDO ATUAL"] || 0}</td>
                 <td>${dataValidadeFormatada}</td>
                 <td>${diasVencer} dias</td>
                 <td>${badge}</td>
