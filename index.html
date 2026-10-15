@@ -577,16 +577,28 @@
         e.preventDefault();
         const btn = document.getElementById("btnEntrada");
         const status = document.getElementById("statusEntrada");
+        status.style.display = "block";
 
         const linhas = document.querySelectorAll('#tabelaItensEntradaBody tr');
         let itens = [];
 
         linhas.forEach(linha => {
+            const codigo = String(linha.querySelector('.input-cod').value.trim());
+            
+            // Busca categoria e tipo correspondentes na base cadastrada ou no estoque atual para evitar o erro 400
+            let prodBase = listaCadastros.find(p => String(p.COD || p.cod) === codigo) || 
+                           listaProdutos.find(p => String(p.COD || p.cod) === codigo);
+
+            let categoriaItem = prodBase ? (prodBase.CATEGORIA || prodBase.Categoria || "DIVERSOS") : "DIVERSOS";
+            let tipoItem = prodBase ? (prodBase.TIPO || prodBase.tipo || "UN") : "UN";
+
             itens.push({
-                codigo: String(linha.querySelector('.input-cod').value.trim()),
+                codigo: codigo,
                 produto: String(linha.querySelector('.input-nome').value.trim()),
                 quantidade: Number(linha.querySelector('.input-qtd').value),
-                validade: String(linha.querySelector('.input-val').value)
+                validade: String(linha.querySelector('.input-val').value),
+                categoria: categoriaItem,
+                tipo: tipoItem
             });
         });
 
