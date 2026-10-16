@@ -301,20 +301,17 @@
         return `${dia}/${mes}/${ano}`;
     }
 
-    // Función nueva para convertir la fecha del input (AAAA-MM-DD) al formato del Excel (ej: dez/26)
+    // Função ajustada para enviar no formato DD/MM/AAAA para o cálculo de dias p/ vencer funcionar
     function formatarDataParaPadraoExcel(dataString) {
         if (!dataString) return "";
-        let partes = dataString.split("-"); // Espera formato AAAA-MM-DD
+        let partes = dataString.split("-"); // Espera formato AAAA-MM-DD do input date
         if (partes.length !== 3) return dataString;
 
-        let ano = partes[0].slice(-2); // Pega os 2 últimos dígitos do ano (ex: 2026 -> 26)
-        let mesIndex = parseInt(partes[1], 10) - 1;
-        
-        const meses = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
-        if (mesIndex >= 0 && mesIndex < 12) {
-            return `${meses[mesIndex]}/${ano}`;
-        }
-        return dataString;
+        let ano = partes[0];
+        let mes = partes[1];
+        let dia = partes[2];
+
+        return `${dia}/${mes}/${ano}`;
     }
 
     function mudarAba(aba, evt) {
@@ -602,11 +599,11 @@
             const codigo = String(linha.querySelector('.input-cod').value.trim());
             const nomeInput = String(linha.querySelector('.input-nome').value.trim());
             
-            // Formatea la fecha del input al formato del Excel (ej: dez/26) antes de meterla al JSON
+            // Formatea la fecha del input al formato DD/MM/AAAA para la planilla
             const dataInputRaw = linha.querySelector('.input-val').value;
             const validadeFormatada = formatarDataParaPadraoExcel(dataInputRaw);
             
-            // Búsqueda exhaustiva en ambas bases de datos
+            // Búsqueda exhaustiva em ambas bases de dados
             let prodBase = listaCadastros.find(p => String(p.COD || p.cod) === codigo) || 
                            listaProdutos.find(p => String(p.COD || p.cod) === codigo);
 
@@ -614,7 +611,7 @@
             let categoriaItem = prodBase ? (prodBase.CATEGORIA || prodBase.Categoria || "DIVERSOS") : "DIVERSOS";
             let tipoItem = prodBase ? (prodBase.UNIDADE || prodBase.TIPO || prodBase.tipo || "UN") : "UN";
 
-            // Se envía con todas las nomenclaturas estándar que Power Automate pueda mapear
+            // Se envía con todas as nomenclaturas estándar que Power Automate possa mapear
             itens.push({
                 codigo: codigo,
                 cod: codigo,
@@ -623,7 +620,7 @@
                 DESCRICAO: nomeProduto,
                 DESCRIPÇAO: nomeProduto,
                 quantidade: Number(linha.querySelector('.input-qtd').value),
-                validade: validadeFormatada, // <-- Aquí ya va formateado exactamente como el Excel (ej: dez/26)
+                validade: validadeFormatada, // <-- Formato DD/MM/AAAA
                 categoria: categoriaItem,
                 Categoria: categoriaItem,
                 CATEGORIA: categoriaItem,
