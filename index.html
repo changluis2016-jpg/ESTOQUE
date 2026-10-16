@@ -301,14 +301,13 @@
         return `${dia}/${mes}/${ano}`;
     }
 
-    // Função que converte a data do input diretamente no Número de Série do Excel (garante data real pura)
     function formatarDataParaPadraoExcel(dataString) {
         if (!dataString) return "";
-        let partes = dataString.split("-"); // Espera formato AAAA-MM-DD
+        let partes = dataString.split("-");
         if (partes.length !== 3) return dataString;
 
         let dataInput = new Date(partes[0], partes[1] - 1, partes[2]);
-        let dataBaseExcel = new Date(1899, 11, 30); // Base de contagem de dias do Excel
+        let dataBaseExcel = new Date(1899, 11, 30);
         let diferencaTempos = dataInput - dataBaseExcel;
         let numeroSerie = Math.floor(diferencaTempos / (1000 * 60 * 60 * 24));
 
@@ -421,6 +420,7 @@
         });
     }
 
+    // --- ENTRADA: Adicionar linha com atalho de Enter na Validade ---
     function adicionarLinhaEntrada() {
         const tbody = document.getElementById('tabelaItensEntradaBody');
         const tr = document.createElement('tr');
@@ -428,10 +428,26 @@
             <td><input type="text" class="input-cod" placeholder="Ex: 893" onblur="preencherNomeProduto(this)" onkeyup="if(event.key==='Enter') preencherNomeProduto(this)" required></td>
             <td><input type="text" class="input-nome" placeholder="Nome do produto (Autopreenchido)" required></td>
             <td><input type="number" class="input-qtd" min="1" placeholder="Qtd" required></td>
-            <td><input type="date" class="input-val" required></td>
+            <td><input type="date" class="input-val" onkeydown="handleEnterEntrada(event, this)" required></td>
             <td><button type="button" class="btn btn-remover btn-acao-tabela" onclick="removerLinha(this)">X</button></td>
         `;
         tbody.appendChild(tr);
+        // Foca no código da nova linha criada
+        tr.querySelector('.input-cod').focus();
+    }
+
+    function handleEnterEntrada(event, inputVal) {
+        if (event.key === 'Enter') {
+            event.preventDefault(); // Evita submeter o formulário
+            const tbody = document.getElementById('tabelaItensEntradaBody');
+            const ultimaLinha = tbody.lastElementChild;
+            const inputValAtual = ultimaLinha.querySelector('.input-val');
+            
+            // Só adiciona nova linha se a linha atual estiver preenchida
+            if (inputVal === inputValAtual && inputVal.value) {
+                adicionarLinhaEntrada();
+            }
+        }
     }
 
     function preencherNomeProduto(input) {
@@ -457,6 +473,7 @@
         }
     }
 
+    // --- SAÍDA: Adicionar linha com atalho de Enter na Quantidade ---
     function adicionarLinhaSaida() {
         const tbody = document.getElementById('tabelaItensSaidaBody');
         const tr = document.createElement('tr');
@@ -476,10 +493,24 @@
         tr.innerHTML = `
             <td><select class="select-produto" onchange="atualizarLotesSaida(this)" required>${optionsProdutos}</select></td>
             <td><select class="select-lote" required><option value="">Selecione o produto acima...</option></select></td>
-            <td><input type="number" class="input-qtd-saida" min="1" placeholder="Qtd" required></td>
+            <td><input type="number" class="input-qtd-saida" min="1" placeholder="Qtd" onkeydown="handleEnterSaida(event, this)" required></td>
             <td><button type="button" class="btn btn-remover btn-acao-tabela" onclick="removerLinha(this)">X</button></td>
         `;
         tbody.appendChild(tr);
+        tr.querySelector('.select-produto').focus();
+    }
+
+    function handleEnterSaida(event, inputQtd) {
+        if (event.key === 'Enter') {
+            event.preventDefault(); // Evita submeter o formulário
+            const tbody = document.getElementById('tabelaItensSaidaBody');
+            const ultimaLinha = tbody.lastElementChild;
+            const inputQtdAtual = ultimaLinha.querySelector('.input-qtd-saida');
+            
+            if (inputQtd === inputQtdAtual && inputQtd.value) {
+                adicionarLinhaSaida();
+            }
+        }
     }
 
     function atualizarLotesSaida(selectProd) {
@@ -493,7 +524,7 @@
         const lotes = listaProdutos.filter(prod => String(prod.cod || prod.COD) === String(codSelecionado));
         lotes.forEach(lote => {
             const dataFormatada = formatarDataExcel(lote.validade);
-            const saldoDisponivel = lote["saldo atual"] || lote["SALDO ATUAL"] || 0;
+            const saldoDisponivel = parseInt(lote["saldo atual"] || lote["SALDO ATUAL"] || 0, 10);
             const idLinha = lote.ID || "";
 
             const opt = document.createElement("option");
@@ -599,12 +630,9 @@
         linhas.forEach(linha => {
             const codigo = String(linha.querySelector('.input-cod').value.trim());
             const nomeInput = String(linha.querySelector('.input-nome').value.trim());
-            
-            // Transforma a data em número de série do Excel para validação matemática perfeita
             const dataInputRaw = linha.querySelector('.input-val').value;
             const validadeFormatada = formatarDataParaPadraoExcel(dataInputRaw);
             
-            // Búsqueda exhaustiva em ambas bases de dados
             let prodBase = listaCadastros.find(p => String(p.COD || p.cod) === codigo) || 
                            listaProdutos.find(p => String(p.COD || p.cod) === codigo);
 
@@ -612,7 +640,6 @@
             let categoriaItem = prodBase ? (prodBase.CATEGORIA || prodBase.Categoria || "DIVERSOS") : "DIVERSOS";
             let tipoItem = prodBase ? (prodBase.UNIDADE || prodBase.TIPO || prodBase.tipo || "UN") : "UN";
 
-            // Se envía con todas as nomenclaturas estándar que Power Automate possa mapear
             itens.push({
                 codigo: codigo,
                 cod: codigo,
@@ -621,7 +648,7 @@
                 DESCRICAO: nomeProduto,
                 DESCRIPÇAO: nomeProduto,
                 quantidade: Number(linha.querySelector('.input-qtd').value),
-                validade: validadeFormatada, // <-- Número de série nativo do Excel
+                validade: validadeFormatada,
                 categoria: categoriaItem,
                 Categoria: categoriaItem,
                 CATEGORIA: categoriaItem,
@@ -667,6 +694,72 @@
         } finally {
             btn.disabled = false;
             btn.textContent = "Processar Entrada no Estoque";
+        }
+    });
+
+    // --- ENVIAR SAÍDA PARA POWER AUTOMATE ---
+    document.getElementById("saidaForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById("btnSaida");
+        const status = document.getElementById("statusSaida");
+        status.style.display = "block";
+
+        const linhas = document.querySelectorAll('#tabelaItensSaidaBody tr');
+        let itens = [];
+
+        linhas.forEach(linha => {
+            const selectLote = linha.querySelector('.select-lote');
+            const idLinha = selectLote.value;
+            const qtdSaida = Number(linha.querySelector('.input-qtd-saida').value);
+            
+            const produtoEstoque = listaProdutos.find(p => String(p.ID) === String(idLinha));
+            const saldoAnterior = produtoEstoque ? parseInt(produtoEstoque["saldo atual"] || produtoEstoque["SALDO ATUAL"] || 0, 10) : 0;
+
+            itens.push({
+                id: idLinha,
+                ID: idLinha,
+                quantidadeSaida: qtdSaida,
+                quantidade: qtdSaida,
+                saldoAnterior: saldoAnterior
+            });
+        });
+
+        const payload = {
+            acao: "saida",
+            requisicao: String(document.getElementById("saiRequisicao").value.trim()),
+            turma: String(document.getElementById("saiTurma").value.trim()),
+            itens: itens
+        };
+
+        btn.disabled = true;
+        btn.textContent = "Processando saída...";
+        status.textContent = "Enviando dados de saída para o fluxo...";
+        status.className = "status-msg";
+
+        try {
+            const res = await fetch(urlPowerAutomateSaida, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                status.textContent = "✅ Saída processada e baixa efetuada com sucesso!";
+                status.className = "status-msg sucesso";
+                document.getElementById("saidaForm").reset();
+                document.getElementById("tabelaItensSaidaBody").innerHTML = "";
+                adicionarLinhaSaida();
+            } else {
+                const erroTexto = await res.text();
+                throw new Error(`Erro ${res.status}: ${erroTexto}`);
+            }
+        } catch (erro) {
+            console.error("Detalhe do erro:", erro);
+            status.textContent = "❌ " + erro.message;
+            status.className = "status-msg erro";
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Processar Saída no Estoque";
         }
     });
 
