@@ -739,13 +739,18 @@
             const selectLote = linha.querySelector('.select-lote');
             const idLinha = selectLote.value;
             const qtdSaida = Number(linha.querySelector('.input-qtd-saida').value);
+            const selectProd = linha.querySelector('.select-produto');
+            const codProduto = selectProd ? selectProd.value : "";
             
             const produtoEstoque = listaProdutos.find(p => String(p.ID) === String(idLinha));
             const saldoAnterior = produtoEstoque ? parseInt(produtoEstoque["saldo atual"] || produtoEstoque["SALDO ATUAL"] || 0, 10) : 0;
+            const validadeLote = produtoEstoque ? (produtoEstoque.validade || produtoEstoque.Validade || "") : "";
 
             itens.push({
                 id: idLinha,
                 ID: idLinha,
+                cod: codProduto,
+                validade: validadeLote,
                 quantidadeSaida: qtdSaida,
                 quantidade: qtdSaida,
                 saldoAnterior: saldoAnterior
