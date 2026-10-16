@@ -4,87 +4,89 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestão e Controle de Estoque - SENAC Cuiabá</title>
-    <!-- Chart.js para o gráfico de categorias -->
+    <!-- Chart.js para os gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #f4f6f9; color: #1e293b; min-height: 100vh; padding-bottom: 40px; }
         
-        /* Cabeçalho */
-        .header-bar { background-color: #1e3a8a; color: white; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        /* Cabeçalho Largo */
+        .header-bar { background-color: #1e3a8a; color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; }
         .header-title-container { display: flex; align-items: center; gap: 15px; }
         .logo-placeholder { background: white; color: #1e3a8a; padding: 8px 15px; font-weight: bold; border-radius: 8px; font-size: 18px; }
         .header-title h1 { font-size: 22px; font-weight: 700; margin-bottom: 2px; }
         .header-title p { font-size: 13px; color: #cbd5e1; }
-        .header-actions { display: flex; gap: 10px; }
         .status-badge-header { background-color: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 15px; border-radius: 20px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
         .dot-green { width: 8px; height: 8px; background-color: #22c55e; border-radius: 50%; display: inline-block; }
         .dot-yellow { width: 8px; height: 8px; background-color: #eab308; border-radius: 50%; display: inline-block; }
 
-        /* Estrutura Principal */
-        .main-container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        /* Estrutura Principal Ampla (Maior largura) */
+        .main-container { width: 96%; max-width: 1600px; margin: 25px auto; padding: 0 15px; }
 
         /* Cards do Dashboard / Métricas */
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 25px; }
         .card-stat { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
-        .card-stat h3 { font-size: 14px; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .card-stat h3 { font-size: 13px; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
         .card-stat .value { font-size: 28px; font-weight: 700; color: #1e3a8a; }
 
-        /* Card do Gráfico */
-        .chart-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; margin-bottom: 25px; }
+        /* Seção de Gráficos Lado a Lado */
+        .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; }
+        @media (max-width: 1024px) { .charts-row { grid-template-columns: 1fr; } }
+        
+        .chart-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
         .chart-card h2 { font-size: 16px; color: #1e293b; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
-        .chart-container { position: relative; height: 300px; width: 100%; }
+        .chart-container { position: relative; height: 280px; width: 100%; display: flex; justify-content: center; align-items: center; }
 
         /* Abas */
         .tabs-card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; overflow: hidden; }
         .tabs-header { display: flex; background: #f8fafc; border-bottom: 1px solid #e2e8f0; overflow-x: auto; }
-        .tab-btn { background: none; border: none; padding: 15px 25px; font-size: 15px; font-weight: 600; color: #64748b; cursor: pointer; transition: all 0.2s; border-bottom: 3px solid transparent; white-space: nowrap; }
+        .tab-btn { background: none; border: none; padding: 16px 30px; font-size: 15px; font-weight: 600; color: #64748b; cursor: pointer; transition: all 0.2s; border-bottom: 3px solid transparent; white-space: nowrap; }
         .tab-btn.active { color: #1e3a8a; background: white; border-bottom-color: #1e3a8a; }
-        .tab-content { display: none; padding: 25px; }
+        .tab-content { display: none; padding: 30px; }
         .tab-content.active { display: block; }
 
-        /* Formulários e Tabelas Dinâmicas */
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        /* Formulários e Tabelas */
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 20px; }
         .form-group { margin-bottom: 15px; }
         label { display: block; font-weight: 600; color: #334155; margin-bottom: 6px; font-size: 13px; }
-        input, select { width: 100%; padding: 11px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s; background: white; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none; background: white; }
         input:focus, select:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
         
-        .btn { border: none; padding: 12px 20px; font-size: 15px; font-weight: 600; border-radius: 8px; cursor: pointer; color: white; transition: background-color 0.2s; display: inline-flex; justify-content: center; align-items: center; gap: 8px; }
+        .btn { border: none; padding: 12px 24px; font-size: 15px; font-weight: 600; border-radius: 8px; cursor: pointer; color: white; display: inline-flex; justify-content: center; align-items: center; gap: 8px; }
         .btn-entrada { background-color: #16a34a; flex: 2; }
         .btn-entrada:hover { background-color: #15803d; }
         .btn-saida { background-color: #dc2626; flex: 2; }
         .btn-saida:hover { background-color: #b91c1c; }
-        
         .btn-cancelar { background-color: #64748b; flex: 1; }
         .btn-cancelar:hover { background-color: #475569; }
 
-        .form-actions { display: flex; gap: 10px; margin-top: 15px; }
-
+        .form-actions { display: flex; gap: 15px; margin-top: 20px; }
         .btn-acao-tabela { padding: 6px 12px; font-size: 13px; border-radius: 6px; }
         .btn-add-linha { background-color: #2563eb; margin-bottom: 15px; }
-        .btn-add-linha:hover { background-color: #1d4ed8; }
         .btn-remover { background-color: #dc2626; color: white; }
-        .btn-remover:hover { background-color: #c0392b; }
 
-        .status-msg { margin-top: 15px; text-align: center; font-weight: 600; font-size: 14px; padding: 10px; border-radius: 6px; display: none; }
+        .status-msg { margin-top: 15px; text-align: center; font-weight: 600; font-size: 14px; padding: 12px; border-radius: 8px; display: none; }
         .status-msg.sucesso { color: #16a34a; background-color: #f0fdf4; border: 1px solid #bbf7d0; display: block; }
         .status-msg.erro { color: #dc2626; background-color: #fef2f2; border: 1px solid #fecaca; display: block; }
 
-        /* Tabelas */
-        .table-responsive { overflow-x: auto; max-height: 450px; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
-        th { background-color: #f8fafc; color: #475569; font-weight: 600; padding: 12px 15px; border-bottom: 2px solid #e2e8f0; position: sticky; top: 0; z-index: 1; }
-        td { padding: 10px 15px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
+        /* Tabelas Amplas */
+        .table-responsive { overflow-x: auto; max-height: 550px; margin-top: 15px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; background: white; }
+        th { background-color: #f8fafc; color: #475569; font-weight: 600; padding: 14px 18px; border-bottom: 2px solid #e2e8f0; position: sticky; top: 0; z-index: 1; }
+        td { padding: 12px 18px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
         tr:hover { background-color: #f8fafc; }
 
-        .badge-alerta { background-color: #fef2f2; color: #dc2626; border: 1px solid #fecaca; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 12px; }
-        .badge-ok { background-color: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 12px; }
+        .badge-alerta { background-color: #fef2f2; color: #dc2626; border: 1px solid #fecaca; padding: 5px 10px; border-radius: 6px; font-weight: 600; font-size: 12px; }
+        .badge-ok { background-color: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; padding: 5px 10px; border-radius: 6px; font-weight: 600; font-size: 12px; }
+        .badge-atencao { background-color: #fefce8; color: #ca8a04; border: 1px solid #fef08a; padding: 5px 10px; border-radius: 6px; font-weight: 600; font-size: 12px; }
+
+        /* Seção Dinâmica do Topo (Esconde fora da consulta) */
+        #painelTopoGeral { transition: all 0.3s ease; }
     </style>
 </head>
 <body>
 
-    <!-- Cabeçalho Principal -->
+    <!-- Cabeçalho -->
     <header class="header-bar">
         <div class="header-title-container">
             <div class="logo-placeholder">Senac</div>
@@ -93,40 +95,53 @@
                 <p>Painel de Disponibilidade e Movimentações em Tempo Real</p>
             </div>
         </div>
-        <div class="header-actions">
-            <div class="status-badge-header" id="statusBadgeGitHub">
-                <span class="dot-yellow" id="dotStatus"></span> Carregando Base...
-            </div>
+        <div class="status-badge-header" id="statusBadgeGitHub">
+            <span class="dot-yellow" id="dotStatus"></span> Carregando Sistema...
         </div>
     </header>
 
     <div class="main-container">
         
-        <!-- Cartões de Resumo Estatístico -->
-        <div class="dashboard-grid">
-            <div class="card-stat">
-                <h3>Total de Produtos Cadastrados</h3>
-                <div class="value" id="statTotalProdutos">0</div>
+        <!-- PAINEL GERAL DO TOPO (Aparece apenas na Consulta) -->
+        <div id="painelTopoGeral">
+            <!-- Cartões de Resumo -->
+            <div class="dashboard-grid">
+                <div class="card-stat">
+                    <h3>Total de Produtos Cadastrados</h3>
+                    <div class="value" id="statTotalProdutos">0</div>
+                </div>
+                <div class="card-stat">
+                    <h3>Quantidade Total em Estoque</h3>
+                    <div class="value" id="statTotalQuantidade">0</div>
+                </div>
+                <div class="card-stat">
+                    <h3>Itens Críticos / Vencidos</h3>
+                    <div class="value" style="color: #dc2626;" id="statItensCriticos">0</div>
+                </div>
+                <div class="card-stat">
+                    <h3>Itens Regulares / Ok</h3>
+                    <div class="value" style="color: #16a34a;" id="statItensOk">0</div>
+                </div>
             </div>
-            <div class="card-stat">
-                <h3>Quantidade Total em Estoque</h3>
-                <div class="value" id="statTotalQuantidade">0</div>
-            </div>
-            <div class="card-stat">
-                <h3>Itens Críticos / Vencendo</h3>
-                <div class="value" style="color: #dc2626;" id="statItensCriticos">0</div>
+
+            <!-- Gráficos Lado a Lado (Rosca e Status) -->
+            <div class="charts-row">
+                <div class="chart-card">
+                    <h2>🍩 Distribuição por Categoria Oficial</h2>
+                    <div class="chart-container">
+                        <canvas id="categoriaDoughnutChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h2>📊 Status de Validade do Estoque</h2>
+                    <div class="chart-container">
+                        <canvas id="statusValidadeChart"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Gráfico por Categoria -->
-        <div class="chart-card">
-            <h2>📊 Distribuição de Quantidades por Categoria Oficial</h2>
-            <div class="chart-container">
-                <canvas id="categoriaChart"></canvas>
-            </div>
-        </div>
-
-        <!-- Painel de Abas -->
+        <!-- Painel de Abas Principal -->
         <div class="tabs-card">
             <div class="tabs-header">
                 <button class="tab-btn active" onclick="mudarAba('consulta', event)">🔍 Consultar Estoque</button>
@@ -138,8 +153,8 @@
             <!-- ABA 1: CONSULTAR ESTOQUE -->
             <div id="aba-consulta" class="tab-content active">
                 <div class="form-group">
-                    <label>Pesquisar por Código ou Descrição do Produto:</label>
-                    <input type="text" id="inputBusca" placeholder="Digite o código (ex: 893) ou descrição do produto..." onkeyup="pesquisarProdutos()">
+                    <label>Pesquisar por Código, ID ou Descrição do Produto:</label>
+                    <input type="text" id="inputBusca" placeholder="Digite para filtrar o estoque..." onkeyup="pesquisarProdutos()">
                 </div>
                 <div class="table-responsive">
                     <table>
@@ -180,8 +195,8 @@
                     <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
 
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <h3 style="font-size: 15px; color: #1e3a8a;">Itens para Entrada</h3>
-                        <button type="button" class="btn btn-add-linha" onclick="adicionarLinhaEntrada()">+ Adicionar Item</button>
+                        <h3 style="font-size: 15px; color: #16a34a;">Itens para Entrada</h3>
+                        <button type="button" class="btn btn-add-linha" style="background-color: #16a34a;" onclick="adicionarLinhaEntrada()">+ Adicionar Item</button>
                     </div>
 
                     <div class="table-responsive">
@@ -189,9 +204,9 @@
                             <thead>
                                 <tr>
                                     <th style="width: 15%;">Código</th>
-                                    <th style="width: 40%;">Produto (Autopreenchido)</th>
+                                    <th style="width: 45%;">Produto (Autopreenchido)</th>
                                     <th style="width: 15%;">Quantidade</th>
-                                    <th style="width: 20%;">Validade</th>
+                                    <th style="width: 15%;">Validade</th>
                                     <th style="width: 10%;">Ação</th>
                                 </tr>
                             </thead>
@@ -205,6 +220,26 @@
                     </div>
                 </form>
                 <div id="statusEntrada" class="status-msg"></div>
+
+                <hr style="border: 0; border-top: 2px solid #e2e8f0; margin: 40px 0 20px 0;">
+                <h3 style="font-size: 16px; color: #1e3a8a; margin-bottom: 15px;">📥 Histórico Recente de Entradas</h3>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data / Hora</th>
+                                <th>Nº Documento</th>
+                                <th>Cód Item</th>
+                                <th>Validade Escolhida</th>
+                                <th>Quantidade</th>
+                                <th>Tipo / Fornecedor</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaHistoricoEntradas">
+                            <tr><td colspan="6" style="text-align: center;">Carregando histórico...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- ABA 3: SAÍDA DE MATERIAL -->
@@ -248,6 +283,26 @@
                     </div>
                 </form>
                 <div id="statusSaida" class="status-msg"></div>
+
+                <hr style="border: 0; border-top: 2px solid #e2e8f0; margin: 40px 0 20px 0;">
+                <h3 style="font-size: 16px; color: #dc2626; margin-bottom: 15px;">📤 Histórico Recente de Saídas</h3>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data / Hora</th>
+                                <th>Turma / Setor</th>
+                                <th>Cód Item</th>
+                                <th>Validade Lote</th>
+                                <th>Quantidade</th>
+                                <th>ID Lote</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaHistoricoSaidas">
+                            <tr><td colspan="6" style="text-align: center;">Carregando histórico...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- ABA 4: VALIDADES PRÓXIMAS -->
@@ -278,6 +333,8 @@
 <script>
     const urlDadosJson = "https://raw.githubusercontent.com/changluis2016-jpg/ESTOQUE/main/dados.json";
     const urlCadastrosJson = "https://raw.githubusercontent.com/changluis2016-jpg/ESTOQUE/main/cadastros.json";
+    const urlHistoricoJson = "https://raw.githubusercontent.com/changluis2016-jpg/ESTOQUE/main/historico.json";
+    
     const urlPowerAutomateEntrada = "https://default554116b687be480a9e3aa0e9e1a653.4b.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/02/workflows/53a06847ff1a435baa429b1692cfc84f/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=6J_jbnw0N4Ji2DKpAYDQEhNjpGpNRYUdKmueyuuXmrs";
     const urlPowerAutomateSaida = "https://default554116b687be480a9e3aa0e9e1a653.4b.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/28/workflows/79362b5fe866419ebe7d6cdc4dbfea6b/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=e6O25-yajfu4Drh5MxKg0-C4v9f7K0vh71MDkZBLDhQ";
 
@@ -288,7 +345,9 @@
 
     let listaProdutos = [];
     let listaCadastros = [];
-    let meugrafico = null;
+    let listaHistoricoGeral = [];
+    let graficoDoughnut = null;
+    let graficoStatus = null;
 
     function formatarDataExcel(serial) {
         if (!serial || serial === "-") return "-";
@@ -306,46 +365,46 @@
         const utc_value = utc_days * 86400;
         const date_info = new Date(utc_value * 1000);
 
-        const dia = String(date_info.getUTCDate()).padStart(2, '0');
-        const mes = String(date_info.getUTCMonth() + 1).padStart(2, '0');
-        const ano = date_info.getUTCFullYear();
-
-        return `${dia}/${mes}/${ano}`;
+        return `${String(date_info.getUTCDate()).padStart(2, '0')}/${String(date_info.getUTCMonth() + 1).padStart(2, '0')}/${date_info.getUTCFullYear()}`;
     }
 
     function formatarDataParaPadraoExcel(dataString) {
         if (!dataString) return "";
         let partes = dataString.split("-");
         if (partes.length !== 3) return dataString;
-
         let dataInput = new Date(partes[0], partes[1] - 1, partes[2]);
         let dataBaseExcel = new Date(1899, 11, 30);
-        let diferencaTempos = dataInput - dataBaseExcel;
-        let numeroSerie = Math.floor(diferencaTempos / (1000 * 60 * 60 * 24));
-
-        return numeroSerie; 
+        return Math.floor((dataInput - dataBaseExcel) / (1000 * 60 * 60 * 24));
     }
 
     function mudarAba(aba, evt) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        const painelTopo = document.getElementById('painelTopoGeral');
 
         if (aba === 'consulta') {
             document.getElementById('aba-consulta').classList.add('active');
             evt.currentTarget.classList.add('active');
+            painelTopo.style.display = 'block'; // Mostra gráficos e cards apenas na consulta
             pesquisarProdutos();
-        } else if (aba === 'entrada') {
-            document.getElementById('aba-entrada').classList.add('active');
-            evt.currentTarget.classList.add('active');
-            if (document.getElementById('tabelaItensEntradaBody').rows.length === 0) adicionarLinhaEntrada();
-        } else if (aba === 'saida') {
-            document.getElementById('aba-saida').classList.add('active');
-            evt.currentTarget.classList.add('active');
-            if (document.getElementById('tabelaItensSaidaBody').rows.length === 0) adicionarLinhaSaida();
-        } else if (aba === 'validades') {
-            document.getElementById('aba-validades').classList.add('active');
-            evt.currentTarget.classList.add('active');
-            renderizarValidades();
+        } else {
+            painelTopo.style.display = 'none'; // Esconde na entrada, saída e validades
+
+            if (aba === 'entrada') {
+                document.getElementById('aba-entrada').classList.add('active');
+                evt.currentTarget.classList.add('active');
+                if (document.getElementById('tabelaItensEntradaBody').rows.length === 0) adicionarLinhaEntrada();
+                renderizarHistoricoEntradas();
+            } else if (aba === 'saida') {
+                document.getElementById('aba-saida').classList.add('active');
+                evt.currentTarget.classList.add('active');
+                if (document.getElementById('tabelaItensSaidaBody').rows.length === 0) adicionarLinhaSaida();
+                renderizarHistoricoSaidas();
+            } else if (aba === 'validades') {
+                document.getElementById('aba-validades').classList.add('active');
+                evt.currentTarget.classList.add('active');
+                renderizarValidades();
+            }
         }
     }
 
@@ -356,7 +415,7 @@
                 const dadosBrutos = await resposta.json();
                 listaProdutos = dadosBrutos.ESTOQUE || dadosBrutos;
                 atualizarStats();
-                renderizarGrafico();
+                renderizarGraficos();
                 pesquisarProdutos();
             }
 
@@ -364,36 +423,42 @@
             if (resCadastro.ok) {
                 const rawData = await resCadastro.json();
                 listaCadastros = Array.isArray(rawData) ? rawData : (rawData.cadastros || rawData.ESTOQUE || []);
-                
-                const badge = document.getElementById("statusBadgeGitHub");
-                if (badge) badge.innerHTML = '<span class="dot-green"></span> Base Cadastrada OK';
-            } else {
-                throw new Error("Erro ao ler cadastros.json");
             }
 
-        } catch (erro) {
-            console.error("Erro ao carregar arquivos JSON:", erro);
+            const resHistorico = await fetch(urlHistoricoJson);
+            if (resHistorico.ok) {
+                listaHistoricoGeral = await resHistorico.json();
+            }
+
             const badge = document.getElementById("statusBadgeGitHub");
-            if (badge) badge.innerHTML = '<span class="dot-yellow"></span> Verifique cadastros.json';
+            if (badge) badge.innerHTML = '<span class="dot-green"></span> Sincronizado com GitHub';
+
+        } catch (erro) {
+            console.error("Erro ao carregar arquivos:", erro);
+            const badge = document.getElementById("statusBadgeGitHub");
+            if (badge) badge.innerHTML = '<span class="dot-yellow"></span> Erro de Sincronização';
         }
     }
 
     function atualizarStats() {
         document.getElementById("statTotalProdutos").textContent = listaProdutos.length;
-        let totalQtd = 0, criticos = 0;
+        let totalQtd = 0, criticos = 0, ok = 0;
 
         listaProdutos.forEach(prod => {
             const saldo = parseInt(prod["saldo atual"] || prod["SALDO ATUAL"] || 0, 10);
             const diasVencer = prod["Dias p/ Vencer"] !== undefined ? parseInt(prod["Dias p/ Vencer"], 10) : 999;
             totalQtd += saldo;
             if (diasVencer <= 30) criticos++;
+            else ok++;
         });
 
         document.getElementById("statTotalQuantidade").textContent = totalQtd;
         document.getElementById("statItensCriticos").textContent = criticos;
+        document.getElementById("statItensOk").textContent = ok;
     }
 
-    function renderizarGrafico() {
+    function renderizarGraficos() {
+        // 1. Gráfico de Rosca (Doughnut) de Categorias
         const categoriasMap = {};
         categoriasOficiais.forEach(cat => categoriasMap[cat] = 0);
 
@@ -409,17 +474,48 @@
             categoriasMap[cat] += parseInt(prod["saldo atual"] || prod["SALDO ATUAL"] || 0, 10);
         });
 
-        const ctx = document.getElementById('categoriaChart').getContext('2d');
-        if (meugrafico) meugrafico.destroy();
+        const ctxDoughnut = document.getElementById('categoriaDoughnutChart').getContext('2d');
+        if (graficoDoughnut) graficoDoughnut.destroy();
 
-        meugrafico = new Chart(ctx, {
-            type: 'bar',
+        graficoDoughnut = new Chart(ctxDoughnut, {
+            type: 'doughnut',
             data: {
                 labels: Object.keys(categoriasMap),
                 datasets: [{
-                    label: 'Quantidade em Estoque',
                     data: Object.values(categoriasMap),
-                    backgroundColor: '#1e3a8a',
+                    backgroundColor: [
+                        '#1e3a8a', '#2563eb', '#38bdf8', '#16a34a', '#ca8a04', 
+                        '#dc2626', '#9333ea', '#db2777', '#0d9488', '#475569', '#f97316', '#84cc16'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
+            }
+        });
+
+        // 2. Gráfico de Status (Críticos vs Regulares/OK)
+        let criticos = 0, ok = 0;
+        listaProdutos.forEach(prod => {
+            const diasVencer = prod["Dias p/ Vencer"] !== undefined ? parseInt(prod["Dias p/ Vencer"], 10) : 999;
+            if (diasVencer <= 30) criticos++;
+            else ok++;
+        });
+
+        const ctxStatus = document.getElementById('statusValidadeChart').getContext('2d');
+        if (graficoStatus) graficoStatus.destroy();
+
+        graficoStatus = new Chart(ctxStatus, {
+            type: 'bar',
+            data: {
+                labels: ['Críticos / Vencendo (<= 30 dias)', 'Regulares / OK (> 30 dias)'],
+                datasets: [{
+                    label: 'Quantidade de Lotes',
+                    data: [criticos, ok],
+                    backgroundColor: ['#dc2626', '#16a34a'],
                     borderRadius: 6
                 }]
             },
@@ -432,40 +528,80 @@
         });
     }
 
-    // --- ENTRADA: Adicionar linha com atalho de Enter na Validade ---
+    function renderizarHistoricoEntradas() {
+        const tbody = document.getElementById('tabelaHistoricoEntradas');
+        tbody.innerHTML = "";
+        
+        const entradas = listaHistoricoGeral.filter(item => 
+            String(item.ENTRADA || item.tipo || "").toUpperCase().includes("ENTRADA") || item.Num_Requisicao || item.Num_Turma === undefined
+        );
+
+        if (entradas.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum registro de entrada encontrado no histórico.</td></tr>';
+            return;
+        }
+
+        entradas.slice(-20).reverse().forEach(ent => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${ent.Data_Hora || '-'}</td>
+                <td><b>${ent.Num_Requisicao || ent.documento || '-'}</b></td>
+                <td>${ent.Cod_Item || ent.codigo || '-'}</td>
+                <td>${formatarDataExcel(ent.Validade_Escolhida || ent.validade)}</td>
+                <td><b>${ent.Quantidade || ent.quantidade || 0}</b></td>
+                <td>${ent.Tipo_Entrada || ent.Tipo_Entrada || 'Entrada'}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function renderizarHistoricoSaidas() {
+        const tbody = document.getElementById('tabelaHistoricoSaidas');
+        tbody.innerHTML = "";
+
+        const saidas = listaHistoricoGeral.filter(item => 
+            String(item.SAIDA || item.tipo || "").toUpperCase().includes("SAIDA") || item.Num_Turma
+        );
+
+        if (saidas.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum registro de saída encontrado no histórico.</td></tr>';
+            return;
+        }
+
+        saidas.slice(-20).reverse().forEach(sai => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${sai.Data_Hora || '-'}</td>
+                <td><b>${sai.Num_Turma || sai.turma || '-'}</b></td>
+                <td>${sai.Cod_Item || sai.cod || '-'}</td>
+                <td>${formatarDataExcel(sai.Validade_Escolhida || sai.validade)}</td>
+                <td><b>${sai.Quantidade || sai.quantidadeSaida || 0}</b></td>
+                <td>#${sai.id || sai.ID || '-'}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // --- ENTRADA ---
     function adicionarLinhaEntrada() {
         const tbody = document.getElementById('tabelaItensEntradaBody');
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><input type="text" class="input-cod" placeholder="Ex: 893" onblur="preencherNomeProduto(this)" onkeyup="if(event.key==='Enter') preencherNomeProduto(this)" required></td>
-            <td><input type="text" class="input-nome" placeholder="Nome do produto (Autopreenchido)" required></td>
+            <td><input type="text" class="input-cod" placeholder="Ex: 893" onblur="preencherNomeProduto(this)" required></td>
+            <td><input type="text" class="input-nome" placeholder="Nome do produto" required></td>
             <td><input type="number" class="input-qtd" min="1" placeholder="Qtd" required></td>
-            <td><input type="date" class="input-val" onkeydown="handleEnterEntrada(event, this)" required></td>
+            <td><input type="date" class="input-val" required></td>
             <td><button type="button" class="btn btn-remover btn-acao-tabela" onclick="removerLinha(this)">X</button></td>
         `;
         tbody.appendChild(tr);
         tr.querySelector('.input-cod').focus();
     }
 
-    function handleEnterEntrada(event, inputVal) {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            const tbody = document.getElementById('tabelaItensEntradaBody');
-            const ultimaLinha = tbody.lastElementChild;
-            const inputValAtual = ultimaLinha.querySelector('.input-val');
-            
-            if (inputVal === inputValAtual && inputVal.value) {
-                adicionarLinhaEntrada();
-            }
-        }
-    }
-
     function cancelarOperacaoEntrada() {
-        if (confirm("Deseja cancelar esta operação e limpar todos os itens digitados?")) {
+        if (confirm("Deseja cancelar esta operação?")) {
             document.getElementById("entradaForm").reset();
             document.getElementById("tabelaItensEntradaBody").innerHTML = "";
             adicionarLinhaEntrada();
-            document.getElementById("statusEntrada").style.display = "none";
         }
     }
 
@@ -475,24 +611,18 @@
         const tr = input.closest('tr');
         const inputNome = tr.querySelector('.input-nome');
         
-        let encontradoEstoque = listaProdutos.find(p => String(p.cod || p.COD) === String(cod));
+        let encontrado = listaCadastros.find(p => String(p.COD || p.cod) === String(cod)) || 
+                         listaProdutos.find(p => String(p.cod || p.COD) === String(cod));
         
-        if (encontradoEstoque) {
-            inputNome.value = encontradoEstoque.produto || encontradoEstoque.DESCRIPÇAO || encontradoEstoque.DESCRICAO || encontradoEstoque.Descrição || "";
-            return;
-        }
-
-        let encontradoCadastro = listaCadastros.find(p => String(p.COD || p.cod) === String(cod));
-        
-        if (encontradoCadastro) {
-            inputNome.value = encontradoCadastro.DESCRIPÇAO || encontradoCadastro.DESCRICAO || encontradoCadastro.produto || encontradoCadastro.descricao || "";
+        if (encontrado) {
+            inputNome.value = encontrado.DESCRIPÇAO || encontrado.DESCRICAO || encontrado.produto || "";
         } else {
             inputNome.value = "";
-            inputNome.placeholder = "⚠️ Código não encontrado nas bases";
+            inputNome.placeholder = "⚠️ Não encontrado na base";
         }
     }
 
-    // --- SAÍDA: Adicionar linha com atalho de Enter na Quantidade ---
+    // --- SAÍDA ---
     function adicionarLinhaSaida() {
         const tbody = document.getElementById('tabelaItensSaidaBody');
         const tr = document.createElement('tr');
@@ -511,33 +641,18 @@
 
         tr.innerHTML = `
             <td><select class="select-produto" onchange="atualizarLotesSaida(this)" required>${optionsProdutos}</select></td>
-            <td><select class="select-lote" required><option value="">Selecione o produto acima...</option></select></td>
-            <td><input type="number" class="input-qtd-saida" min="1" placeholder="Qtd" onkeydown="handleEnterSaida(event, this)" required></td>
+            <td><select class="select-lote" required><option value="">Selecione o produto...</option></select></td>
+            <td><input type="number" class="input-qtd-saida" min="1" placeholder="Qtd" required></td>
             <td><button type="button" class="btn btn-remover btn-acao-tabela" onclick="removerLinha(this)">X</button></td>
         `;
         tbody.appendChild(tr);
-        tr.querySelector('.select-produto').focus();
-    }
-
-    function handleEnterSaida(event, inputQtd) {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            const tbody = document.getElementById('tabelaItensSaidaBody');
-            const ultimaLinha = tbody.lastElementChild;
-            const inputQtdAtual = ultimaLinha.querySelector('.input-qtd-saida');
-            
-            if (inputQtd === inputQtdAtual && inputQtd.value) {
-                adicionarLinhaSaida();
-            }
-        }
     }
 
     function cancelarOperacaoSaida() {
-        if (confirm("Deseja cancelar esta saída e limpar todos os itens digitados?")) {
+        if (confirm("Deseja cancelar esta saída?")) {
             document.getElementById("saidaForm").reset();
             document.getElementById("tabelaItensSaidaBody").innerHTML = "";
             adicionarLinhaSaida();
-            document.getElementById("statusSaida").style.display = "none";
         }
     }
 
@@ -545,31 +660,22 @@
         const codSelecionado = selectProd.value;
         const tr = selectProd.closest('tr');
         const selectLote = tr.querySelector('.select-lote');
-        selectLote.innerHTML = '<option value="">Selecione o lote específico...</option>';
+        selectLote.innerHTML = '<option value="">Selecione o lote...</option>';
 
         if (!codSelecionado) return;
 
-        const lotes = listaProdutos.filter(prod => String(prod.cod || prod.COD) === String(codSelecionado));
-        lotes.forEach(lote => {
-            const dataFormatada = formatarDataExcel(lote.validade);
-            const saldoDisponivel = parseInt(lote["saldo atual"] || lote["SALDO ATUAL"] || 0, 10);
-            const idLinha = lote.ID || "";
-
+        listaProdutos.filter(prod => String(prod.cod || prod.COD) === String(codSelecionado)).forEach(lote => {
             const opt = document.createElement("option");
-            opt.value = idLinha;
-            opt.textContent = `ID [${idLinha}] | Validade: ${dataFormatada} | Saldo: ${saldoDisponivel} un.`;
+            opt.value = lote.ID;
+            opt.textContent = `ID [${lote.ID}] | Val: ${formatarDataExcel(lote.validade)} | Saldo: ${lote["saldo atual"] || lote["SALDO ATUAL"]} un.`;
             selectLote.appendChild(opt);
         });
     }
 
     function removerLinha(btn) {
         const tr = btn.closest('tr');
-        const tbody = tr.parentNode;
-        if (tbody.rows.length > 1) {
-            tr.remove();
-        } else {
-            alert('Você precisa manter pelo menos um item na lista.');
-        }
+        if (tr.parentNode.rows.length > 1) tr.remove();
+        else alert('Você precisa manter pelo menos um item.');
     }
 
     function pesquisarProdutos() {
@@ -577,11 +683,11 @@
         const tbody = document.getElementById("tabelaConsulta");
         tbody.innerHTML = "";
 
-        const filtrados = listaProdutos.filter(prod => {
-            return String(prod.cod || prod.COD || "").toLowerCase().includes(termo) ||
-                   String(prod.produto || prod.DESCRIPÇAO || prod.DESCRICAO || "").toLowerCase().includes(termo) ||
-                   String(prod.ID || "").toLowerCase().includes(termo);
-        });
+        const filtrados = listaProdutos.filter(prod => 
+            String(prod.cod || prod.COD || "").toLowerCase().includes(termo) ||
+            String(prod.produto || prod.DESCRIPÇAO || prod.DESCRICAO || "").toLowerCase().includes(termo) ||
+            String(prod.ID || "").toLowerCase().includes(termo)
+        );
 
         if (filtrados.length === 0) {
             tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">Nenhum produto encontrado.</td></tr>';
@@ -591,10 +697,8 @@
         filtrados.forEach(prod => {
             const tr = document.createElement("tr");
             const diasVencer = prod["Dias p/ Vencer"] !== undefined ? parseInt(prod["Dias p/ Vencer"], 10) : 999;
-            const dataValidadeFormatada = formatarDataExcel(prod.validade);
-            const statusValidade = prod["Status Validade"] || "☑️ OK";
             
-            let badge = `<span class="badge-ok">${statusValidade}</span>`;
+            let badge = `<span class="badge-ok">☑️ OK</span>`;
             if (diasVencer <= 30 && diasVencer >= 0) badge = `<span class="badge-alerta">Vence em ${diasVencer} dias</span>`;
             else if (diasVencer < 0) badge = `<span class="badge-alerta">Vencido</span>`;
 
@@ -605,7 +709,7 @@
                 <td>${prod.Categoria || prod.CATEGORIA || '-'}</td>
                 <td>${prod.TIPO || '-'}</td>
                 <td><b>${prod["saldo atual"] || prod["SALDO ATUAL"] || 0}</b></td>
-                <td>${dataValidadeFormatada}</td>
+                <td>${formatarDataExcel(prod.validade)}</td>
                 <td>${diasVencer !== 999 ? diasVencer + ' dias' : '-'}</td>
                 <td>${badge}</td>
             `;
@@ -616,28 +720,17 @@
     function renderizarValidades() {
         const tbody = document.getElementById("tabelaValidades");
         tbody.innerHTML = "";
-
-        if (!listaProdutos || listaProdutos.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Nenhum produto encontrado.</td></tr>';
-            return;
-        }
-
         listaProdutos.forEach(prod => {
-            const tr = document.createElement("tr");
             const diasVencer = prod["Dias p/ Vencer"] !== undefined ? parseInt(prod["Dias p/ Vencer"], 10) : 999;
-            const dataValidadeFormatada = formatarDataExcel(prod.validade);
-            const statusValidade = prod["Status Validade"] || "☑️ OK";
+            let badge = diasVencer <= 30 ? `<span class="badge-alerta">Vence em ${diasVencer} dias</span>` : `<span class="badge-ok">OK</span>`;
             
-            let badge = `<span class="badge-ok">${statusValidade}</span>`;
-            if (diasVencer <= 30 && diasVencer >= 0) badge = `<span class="badge-alerta">Vence em ${diasVencer} dias</span>`;
-            else if (diasVencer < 0) badge = `<span class="badge-alerta">Vencido</span>`;
-
+            const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td><b>#${prod.ID || '-'}</b></td>
                 <td>${prod.cod || prod.COD}</td>
                 <td>${prod.produto || prod.DESCRIPÇAO || prod.DESCRICAO || '-'}</td>
                 <td>${prod["saldo atual"] || prod["SALDO ATUAL"] || 0}</td>
-                <td>${dataValidadeFormatada}</td>
+                <td>${formatarDataExcel(prod.validade)}</td>
                 <td>${diasVencer} dias</td>
                 <td>${badge}</td>
             `;
@@ -645,155 +738,91 @@
         });
     }
 
-    // --- ENVIAR ENTRADA PARA POWER AUTOMATE ---
+    // Submissão Entrada
     document.getElementById("entradaForm").addEventListener("submit", async (e) => {
         e.preventDefault();
         const btn = document.getElementById("btnEntrada");
         const status = document.getElementById("statusEntrada");
         status.style.display = "block";
 
-        const linhas = document.querySelectorAll('#tabelaItensEntradaBody tr');
         let itens = [];
-
-        linhas.forEach(linha => {
-            const codigo = String(linha.querySelector('.input-cod').value.trim());
-            const nomeInput = String(linha.querySelector('.input-nome').value.trim());
-            const dataInputRaw = linha.querySelector('.input-val').value;
-            const validadeFormatada = formatarDataParaPadraoExcel(dataInputRaw);
-            
-            let prodBase = listaCadastros.find(p => String(p.COD || p.cod) === codigo) || 
-                           listaProdutos.find(p => String(p.COD || p.cod) === codigo);
-
-            let nomeProduto = nomeInput || (prodBase ? (prodBase.DESCRIPÇAO || prodBase.DESCRICAO || prodBase.produto || prodBase.Descrição || "") : "");
-            let categoriaItem = prodBase ? (prodBase.CATEGORIA || prodBase.Categoria || "DIVERSOS") : "DIVERSOS";
-            let tipoItem = prodBase ? (prodBase.UNIDADE || prodBase.TIPO || prodBase.tipo || "UN") : "UN";
-
+        document.querySelectorAll('#tabelaItensEntradaBody tr').forEach(linha => {
+            const codigo = linha.querySelector('.input-cod').value.trim();
             itens.push({
                 codigo: codigo,
                 cod: codigo,
-                COD: codigo,
-                produto: nomeProduto,
-                DESCRICAO: nomeProduto,
-                DESCRIPÇAO: nomeProduto,
                 quantidade: Number(linha.querySelector('.input-qtd').value),
-                validade: validadeFormatada,
-                categoria: categoriaItem,
-                Categoria: categoriaItem,
-                CATEGORIA: categoriaItem,
-                tipo: tipoItem,
-                TIPO: tipoItem,
-                UNIDADE: tipoItem
+                validade: formatarDataParaPadraoExcel(linha.querySelector('.input-val').value)
             });
         });
 
         const payload = {
             acao: "entrada",
-            requisicao: String(document.getElementById("entRequisicao").value.trim()),
-            turma: String(document.getElementById("entTurma").value.trim()),
+            requisicao: document.getElementById("entRequisicao").value.trim(),
+            turma: document.getElementById("entTurma").value.trim(),
             itens: itens
         };
 
         btn.disabled = true;
-        btn.textContent = "Processando...";
-        status.textContent = "Enviando dados para o fluxo...";
-        status.className = "status-msg";
-
         try {
             const res = await fetch(urlPowerAutomateEntrada, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
+                method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
             });
-
             if (res.ok) {
-                status.textContent = "✅ Entrada processada e enviada com sucesso!";
+                status.textContent = "✅ Entrada enviada com sucesso!";
                 status.className = "status-msg sucesso";
                 document.getElementById("entradaForm").reset();
                 document.getElementById("tabelaItensEntradaBody").innerHTML = "";
                 adicionarLinhaEntrada();
-            } else {
-                const erroTexto = await res.text();
-                throw new Error(`Erro ${res.status}: ${erroTexto}`);
-            }
-        } catch (erro) {
-            console.error("Detalhe do erro:", erro);
-            status.textContent = "❌ " + erro.message;
+            } else { throw new Error(await res.text()); }
+        } catch (err) {
+            status.textContent = "❌ Erro: " + err.message;
             status.className = "status-msg erro";
-        } finally {
-            btn.disabled = false;
-            btn.textContent = "Processar Entrada no Estoque";
-        }
+        } finally { btn.disabled = false; }
     });
 
-    // --- ENVIAR SAÍDA PARA POWER AUTOMATE ---
+    // Submissão Saída
     document.getElementById("saidaForm").addEventListener("submit", async (e) => {
         e.preventDefault();
         const btn = document.getElementById("btnSaida");
         const status = document.getElementById("statusSaida");
         status.style.display = "block";
 
-        const linhas = document.querySelectorAll('#tabelaItensSaidaBody tr');
         let itens = [];
-
-        linhas.forEach(linha => {
-            const selectLote = linha.querySelector('.select-lote');
-            const idLinha = selectLote.value;
-            const qtdSaida = Number(linha.querySelector('.input-qtd-saida').value);
-            const selectProd = linha.querySelector('.select-produto');
-            const codProduto = selectProd ? selectProd.value : "";
-            
-            const produtoEstoque = listaProdutos.find(p => String(p.ID) === String(idLinha));
-            const saldoAnterior = produtoEstoque ? parseInt(produtoEstoque["saldo atual"] || produtoEstoque["SALDO ATUAL"] || 0, 10) : 0;
-            const validadeLote = produtoEstoque ? (produtoEstoque.validade || produtoEstoque.Validade || "") : "";
-
+        document.querySelectorAll('#tabelaItensSaidaBody tr').forEach(linha => {
+            const idLinha = linha.querySelector('.select-lote').value;
+            const prodEst = listaProdutos.find(p => String(p.ID) === String(idLinha));
             itens.push({
                 id: idLinha,
                 ID: idLinha,
-                cod: codProduto,
-                validade: validadeLote,
-                quantidadeSaida: qtdSaida,
-                quantidade: qtdSaida,
-                saldoAnterior: saldoAnterior
+                quantidadeSaida: Number(linha.querySelector('.input-qtd-saida').value),
+                saldoAnterior: prodEst ? parseInt(prodEst["saldo atual"] || 0, 10) : 0
             });
         });
 
         const payload = {
             acao: "saida",
-            requisicao: String(document.getElementById("saiRequisicao").value.trim()),
-            turma: String(document.getElementById("saiTurma").value.trim()),
+            requisicao: document.getElementById("saiRequisicao").value.trim(),
+            turma: document.getElementById("saiTurma").value.trim(),
             itens: itens
         };
 
         btn.disabled = true;
-        btn.textContent = "Processando saída...";
-        status.textContent = "Enviando dados de saída para o fluxo...";
-        status.className = "status-msg";
-
         try {
             const res = await fetch(urlPowerAutomateSaida, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
+                method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
             });
-
             if (res.ok) {
-                status.textContent = "✅ Saída processada e baixa efetuada com sucesso!";
+                status.textContent = "✅ Saída processada com sucesso!";
                 status.className = "status-msg sucesso";
                 document.getElementById("saidaForm").reset();
                 document.getElementById("tabelaItensSaidaBody").innerHTML = "";
                 adicionarLinhaSaida();
-            } else {
-                const erroTexto = await res.text();
-                throw new Error(`Erro ${res.status}: ${erroTexto}`);
-            }
-        } catch (erro) {
-            console.error("Detalhe do erro:", erro);
-            status.textContent = "❌ " + erro.message;
+            } else { throw new Error(await res.text()); }
+        } catch (err) {
+            status.textContent = "❌ Erro: " + err.message;
             status.className = "status-msg erro";
-        } finally {
-            btn.disabled = false;
-            btn.textContent = "Processar Saída no Estoque";
-        }
+        } finally { btn.disabled = false; }
     });
 
     carregarDados();
