@@ -301,17 +301,18 @@
         return `${dia}/${mes}/${ano}`;
     }
 
-    // Função ajustada para enviar no formato DD/MM/AAAA para o cálculo de dias p/ vencer funcionar
+    // Função que converte a data do input diretamente no Número de Série do Excel (garante data real pura)
     function formatarDataParaPadraoExcel(dataString) {
         if (!dataString) return "";
-        let partes = dataString.split("-"); // Espera formato AAAA-MM-DD do input date
+        let partes = dataString.split("-"); // Espera formato AAAA-MM-DD
         if (partes.length !== 3) return dataString;
 
-        let ano = partes[0];
-        let mes = partes[1];
-        let dia = partes[2];
+        let dataInput = new Date(partes[0], partes[1] - 1, partes[2]);
+        let dataBaseExcel = new Date(1899, 11, 30); // Base de contagem de dias do Excel
+        let diferencaTempos = dataInput - dataBaseExcel;
+        let numeroSerie = Math.floor(diferencaTempos / (1000 * 60 * 60 * 24));
 
-        return `${dia}/${mes}/${ano}`;
+        return numeroSerie; 
     }
 
     function mudarAba(aba, evt) {
@@ -599,7 +600,7 @@
             const codigo = String(linha.querySelector('.input-cod').value.trim());
             const nomeInput = String(linha.querySelector('.input-nome').value.trim());
             
-            // Formatea la fecha del input al formato DD/MM/AAAA para la planilla
+            // Transforma a data em número de série do Excel para validação matemática perfeita
             const dataInputRaw = linha.querySelector('.input-val').value;
             const validadeFormatada = formatarDataParaPadraoExcel(dataInputRaw);
             
@@ -620,7 +621,7 @@
                 DESCRICAO: nomeProduto,
                 DESCRIPÇAO: nomeProduto,
                 quantidade: Number(linha.querySelector('.input-qtd').value),
-                validade: validadeFormatada, // <-- Formato DD/MM/AAAA
+                validade: validadeFormatada, // <-- Número de série nativo do Excel
                 categoria: categoriaItem,
                 Categoria: categoriaItem,
                 CATEGORIA: categoriaItem,
