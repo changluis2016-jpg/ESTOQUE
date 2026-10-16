@@ -111,7 +111,7 @@
             <!-- Cartões de Resumo -->
             <div class="dashboard-grid">
                 <div class="card-stat">
-                    <h3>Total de Produtos Cadastrados</h3>
+                    <h3>Total de Produtos com Saldo</h3>
                     <div class="value" id="statTotalProdutos">0</div>
                 </div>
                 <div class="card-stat">
@@ -327,7 +327,7 @@
                     </div>
                 </div>
 
-                <h3 style="font-size: 17px; color: #1e293b; margin-bottom: 10px;">📋 Lotes Ordenados por Proximidade de Vencimento</h3>
+                <h3 style="font-size: 17px; color: #1e293b; margin-bottom: 10px;">📋 Lotes Ativos Ordenados por Vencimento (Saldo > 0)</h3>
 
                 <div class="table-responsive">
                     <table>
@@ -371,23 +371,37 @@
     let graficoDoughnut = null;
     let graficoStatus = null;
 
-    function formatarDataExcel(serial) {
-        if (!serial || serial === "-") return "-";
-        if (typeof serial === "string" && (serial.includes("-") || serial.includes("/"))) {
-            if (serial.includes("-")) {
-                const partes = serial.split("-");
-                if (partes[0].length === 4) return `${partes[2]}/${partes[1]}/${partes[0]}`;
-            }
-            return serial;
+    // PREVENIR ENVIO DO FORMULÁRIO AO PRESSIONAR ENTER DENTRO DE INPUTS
+    document.addEventListener("keydown", function(e) {
+        if (e.key === "Enter" && e.target.tagName === "INPUT") {
+            e.preventDefault(); // Impede o envio do formulário por erro
         }
-        const numSerial = parseFloat(serial);
-        if (isNaN(numSerial)) return serial;
+    });
 
-        const utc_days = Math.floor(numSerial - 25569);
-        const utc_value = utc_days * 86400;
-        const date_info = new Date(utc_value * 1000);
+    // FORMATADOR DE DATA AVANÇADO (Trata Excel, ISO, String e Objetos)
+    function formatarDataExcel(valor) {
+        if (!valor || valor === "-") return "-";
 
-        return `${String(date_info.getUTCDate()).padStart(2, '0')}/${String(date_info.getUTCMonth() + 1).padStart(2, '0')}/${date_info.getUTCFullYear()}`;
+        if (typeof valor === "string") {
+            let v = valor.trim();
+            if (v.includes("T")) v = v.split("T")[0]; // Formato ISO YYYY-MM-DD
+            if (v.includes("-")) {
+                const partes = v.split("-");
+                if (partes[0].length === 4) return `${partes[2].padStart(2, '0')}/${partes[1].padStart(2, '0')}/${partes[0]}`;
+                if (partes[2].length === 4) return `${partes[0].padStart(2, '0')}/${partes[1].padStart(2, '0')}/${partes[2]}`;
+            }
+            if (v.includes("/")) return v;
+        }
+
+        const numSerial = parseFloat(valor);
+        if (!isNaN(numSerial) && numSerial > 1000) {
+            const utc_days = Math.floor(numSerial - 25569);
+            const utc_value = utc_days * 86400;
+            const date_info = new Date(utc_value * 1000);
+            return `${String(date_info.getUTCDate()).padStart(2, '0')}/${String(date_info.getUTCMonth() + 1).padStart(2, '0')}/${date_info.getUTCFullYear()}`;
+        }
+
+        return String(valor);
     }
 
     function formatarDataParaPadraoExcel(dataString) {
@@ -462,11 +476,14 @@
         }
     }
 
+    // ATUALIZA STATS IGNORANDO PRODUTOS COM SALDO ZERADO
     function atualizarStats() {
-        document.getElementById("statTotalProdutos").textContent = listaProdutos.length;
+        const ativos = listaProdutos.filter(p => parseInt(p["saldo atual"] || p["SALDO ATUAL"] || 0, 10) > 0);
+        
+        document.getElementById("statTotalProdutos").textContent = ativos.length;
         let totalQtd = 0, criticos = 0, ok = 0;
 
-        listaProdutos.forEach(prod => {
+        ativos.forEach(prod => {
             const saldo = parseInt(prod["saldo atual"] || prod["SALDO ATUAL"] || 0, 10);
             const diasVencer = prod["Dias p/ Vencer"] !== undefined ? parseInt(prod["Dias p/ Vencer"], 10) : 999;
             totalQtd += saldo;
@@ -483,7 +500,9 @@
         const categoriasMap = {};
         categoriasOficiais.forEach(cat => categoriasMap[cat] = 0);
 
-        listaProdutos.forEach(prod => {
+        const ativos = listaProdutos.filter(p => parseInt(p["saldo atual"] || p["SALDO ATUAL"] || 0, 10) > 0);
+
+        ativos.forEach(prod => {
             let cat = (prod.Categoria || prod.CATEGORIA || "DIVERSOS").trim().toUpperCase();
             if (cat.includes("LIMPEZA") || cat.includes("CONSERVACAO")) cat = "CONSERVAÇÃO E LIMPEZA";
             else if (cat.includes("CULINARIA") || cat.includes("ALIMENTICIO")) cat = "CULINÁRIA";
@@ -519,7 +538,7 @@
         });
 
         let criticos = 0, ok = 0;
-        listaProdutos.forEach(prod => {
+        ativos.forEach(prod => {
             const diasVencer = prod["Dias p/ Vencer"] !== undefined ? parseInt(prod["Dias p/ Vencer"], 10) : 999;
             if (diasVencer <= 30) criticos++;
             else ok++;
@@ -533,7 +552,7 @@
             data: {
                 labels: ['Críticos / Vencendo (<= 30 dias)', 'Regulares / OK (> 30 dias)'],
                 datasets: [{
-                    label: 'Quantidade de Lotes',
+                    label: 'Quantidade de Lotes Ativos',
                     data: [criticos, ok],
                     backgroundColor: ['#dc2626', '#16a34a'],
                     borderRadius: 6
@@ -561,10 +580,10 @@
             return;
         }
 
-        entradas.slice(-20).reverse().forEach(ent => {
+        entradas.slice(-30).reverse().forEach(ent => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${ent.Data_Hora || '-'}</td>
+                <td>${formatarDataExcel(ent.Data_Hora)}</td>
                 <td><b>${ent.Num_Requisicao || ent.documento || '-'}</b></td>
                 <td>${ent.Cod_Item || ent.codigo || '-'}</td>
                 <td>${formatarDataExcel(ent.Validade_Escolhida || ent.validade)}</td>
@@ -588,10 +607,10 @@
             return;
         }
 
-        saidas.slice(-20).reverse().forEach(sai => {
+        saidas.slice(-30).reverse().forEach(sai => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${sai.Data_Hora || '-'}</td>
+                <td>${formatarDataExcel(sai.Data_Hora)}</td>
                 <td><b>${sai.Num_Turma || sai.turma || '-'}</b></td>
                 <td>${sai.Cod_Item || sai.cod || '-'}</td>
                 <td>${formatarDataExcel(sai.Validade_Escolhida || sai.validade)}</td>
@@ -610,11 +629,50 @@
             <td><input type="text" class="input-cod" placeholder="Ex: 893" onblur="preencherNomeProduto(this)" required></td>
             <td><input type="text" class="input-nome" placeholder="Nome do produto" required></td>
             <td><input type="number" class="input-qtd" min="1" placeholder="Qtd" required></td>
-            <td><input type="date" class="input-val" required></td>
+            <td><input type="date" class="input-val" onkeydown="handleEnterInTable(event, 'entrada')" required></td>
             <td><button type="button" class="btn btn-remover btn-acao-tabela" onclick="removerLinha(this)">X</button></td>
         `;
         tbody.appendChild(tr);
         tr.querySelector('.input-cod').focus();
+    }
+
+    // --- SAÍDA ---
+    function adicionarLinhaSaida() {
+        const tbody = document.getElementById('tabelaItensSaidaBody');
+        const tr = document.createElement('tr');
+
+        let optionsProdutos = '<option value="">Selecione o produto...</option>';
+        const codigosUnicos = {};
+        
+        // APENAS PRODUTOS COM SALDO > 0
+        listaProdutos.filter(p => parseInt(p["saldo atual"] || p["SALDO ATUAL"] || 0, 10) > 0).forEach(prod => {
+            const codigo = prod.cod || prod.COD;
+            if (codigo && !codigosUnicos[codigo]) {
+                codigosUnicos[codigo] = prod.produto || prod.DESCRIPÇAO || prod.DESCRICAO || 'Produto';
+            }
+        });
+
+        for (const [cod, nome] of Object.entries(codigosUnicos)) {
+            optionsProdutos += `<option value="${cod}">${cod} - ${nome}</option>`;
+        }
+
+        tr.innerHTML = `
+            <td><select class="select-produto" onchange="atualizarLotesSaida(this)" required>${optionsProdutos}</select></td>
+            <td><select class="select-lote" required><option value="">Selecione o produto...</option></select></td>
+            <td><input type="number" class="input-qtd-saida" min="1" placeholder="Qtd" onkeydown="handleEnterInTable(event, 'saida')" required></td>
+            <td><button type="button" class="btn btn-remover btn-acao-tabela" onclick="removerLinha(this)">X</button></td>
+        `;
+        tbody.appendChild(tr);
+        tr.querySelector('.select-produto').focus();
+    }
+
+    // TECLA ENTER ADICIONA NOVO ITEM EM VEZ DE SUBMETER
+    function handleEnterInTable(event, tipo) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            if (tipo === 'entrada') adicionarLinhaEntrada();
+            else if (tipo === 'saida') adicionarLinhaSaida();
+        }
     }
 
     function cancelarOperacaoEntrada() {
@@ -622,6 +680,14 @@
             document.getElementById("entradaForm").reset();
             document.getElementById("tabelaItensEntradaBody").innerHTML = "";
             adicionarLinhaEntrada();
+        }
+    }
+
+    function cancelarOperacaoSaida() {
+        if (confirm("Deseja cancelar esta saída?")) {
+            document.getElementById("saidaForm").reset();
+            document.getElementById("tabelaItensSaidaBody").innerHTML = "";
+            adicionarLinhaSaida();
         }
     }
 
@@ -642,40 +708,6 @@
         }
     }
 
-    // --- SAÍDA ---
-    function adicionarLinhaSaida() {
-        const tbody = document.getElementById('tabelaItensSaidaBody');
-        const tr = document.createElement('tr');
-
-        let optionsProdutos = '<option value="">Selecione o produto...</option>';
-        const codigosUnicos = {};
-        listaProdutos.forEach(prod => {
-            const codigo = prod.cod || prod.COD;
-            if (codigo && !codigosUnicos[codigo]) {
-                codigosUnicos[codigo] = prod.produto || prod.DESCRIPÇAO || prod.DESCRICAO || 'Produto';
-            }
-        });
-        for (const [cod, nome] of Object.entries(codigosUnicos)) {
-            optionsProdutos += `<option value="${cod}">${cod} - ${nome}</option>`;
-        }
-
-        tr.innerHTML = `
-            <td><select class="select-produto" onchange="atualizarLotesSaida(this)" required>${optionsProdutos}</select></td>
-            <td><select class="select-lote" required><option value="">Selecione o produto...</option></select></td>
-            <td><input type="number" class="input-qtd-saida" min="1" placeholder="Qtd" required></td>
-            <td><button type="button" class="btn btn-remover btn-acao-tabela" onclick="removerLinha(this)">X</button></td>
-        `;
-        tbody.appendChild(tr);
-    }
-
-    function cancelarOperacaoSaida() {
-        if (confirm("Deseja cancelar esta saída?")) {
-            document.getElementById("saidaForm").reset();
-            document.getElementById("tabelaItensSaidaBody").innerHTML = "";
-            adicionarLinhaSaida();
-        }
-    }
-
     function atualizarLotesSaida(selectProd) {
         const codSelecionado = selectProd.value;
         const tr = selectProd.closest('tr');
@@ -684,7 +716,8 @@
 
         if (!codSelecionado) return;
 
-        listaProdutos.filter(prod => String(prod.cod || prod.COD) === String(codSelecionado)).forEach(lote => {
+        // FILTRA APENAS LOTES COM SALDO > 0
+        listaProdutos.filter(prod => String(prod.cod || prod.COD) === String(codSelecionado) && parseInt(prod["saldo atual"] || prod["SALDO ATUAL"] || 0, 10) > 0).forEach(lote => {
             const opt = document.createElement("option");
             opt.value = lote.ID;
             opt.textContent = `ID [${lote.ID}] | Val: ${formatarDataExcel(lote.validade)} | Saldo: ${lote["saldo atual"] || lote["SALDO ATUAL"]} un.`;
@@ -698,19 +731,24 @@
         else alert('Você precisa manter pelo menos um item.');
     }
 
+    // CONSULTAR ESTOQUE (DESCONSIDERA SALDO ZERADO)
     function pesquisarProdutos() {
         const termo = document.getElementById("inputBusca").value.toLowerCase().trim();
         const tbody = document.getElementById("tabelaConsulta");
         tbody.innerHTML = "";
 
-        const filtrados = listaProdutos.filter(prod => 
-            String(prod.cod || prod.COD || "").toLowerCase().includes(termo) ||
-            String(prod.produto || prod.DESCRIPÇAO || prod.DESCRICAO || "").toLowerCase().includes(termo) ||
-            String(prod.ID || "").toLowerCase().includes(termo)
-        );
+        // FILTRO: Saldo > 0 E busca do usuário
+        const filtrados = listaProdutos.filter(prod => {
+            const saldo = parseInt(prod["saldo atual"] || prod["SALDO ATUAL"] || 0, 10);
+            if (saldo <= 0) return false; // Oculta produtos zerados
+
+            return String(prod.cod || prod.COD || "").toLowerCase().includes(termo) ||
+                   String(prod.produto || prod.DESCRIPÇAO || prod.DESCRICAO || "").toLowerCase().includes(termo) ||
+                   String(prod.ID || "").toLowerCase().includes(termo);
+        });
 
         if (filtrados.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">Nenhum produto encontrado.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">Nenhum produto ativo em estoque encontrado.</td></tr>';
             return;
         }
 
@@ -737,7 +775,7 @@
         });
     }
 
-    // RENDERIZAR VALIDADES COM 3 CARDS E ORDENAÇÃO DOS MAIS PRÓXIMOS
+    // RENDERIZAR VALIDADES (DESCONSIDERA SALDO ZERADO)
     function renderizarValidades() {
         const tbody = document.getElementById("tabelaValidades");
         tbody.innerHTML = "";
@@ -746,14 +784,21 @@
         let countAtencao60 = 0;
         let countRegular180 = 0;
 
-        // Ordena os produtos colocando os que vencem primeiro no topo
-        const produtosOrdenados = [...listaProdutos].sort((a, b) => {
+        // FILTRA PRODUTOS COM SALDO > 0 E ORDENA POR PROXIMIDADE DE VENCIMENTO
+        const produtosAtivos = listaProdutos.filter(prod => parseInt(prod["saldo atual"] || prod["SALDO ATUAL"] || 0, 10) > 0);
+
+        produtosAtivos.sort((a, b) => {
             const diasA = a["Dias p/ Vencer"] !== undefined ? parseInt(a["Dias p/ Vencer"], 10) : 9999;
             const diasB = b["Dias p/ Vencer"] !== undefined ? parseInt(b["Dias p/ Vencer"], 10) : 9999;
             return diasA - diasB;
         });
 
-        produtosOrdenados.forEach(prod => {
+        if (produtosAtivos.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Nenhum produto ativo em estoque.</td></tr>';
+            return;
+        }
+
+        produtosAtivos.forEach(prod => {
             const diasVencer = prod["Dias p/ Vencer"] !== undefined ? parseInt(prod["Dias p/ Vencer"], 10) : 999;
 
             // Contagem dos 3 quadros
