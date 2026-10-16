@@ -51,10 +51,16 @@
         input:focus, select:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
         
         .btn { border: none; padding: 12px 20px; font-size: 15px; font-weight: 600; border-radius: 8px; cursor: pointer; color: white; transition: background-color 0.2s; display: inline-flex; justify-content: center; align-items: center; gap: 8px; }
-        .btn-entrada { background-color: #16a34a; width: 100%; margin-top: 15px; }
+        .btn-entrada { background-color: #16a34a; flex: 2; }
         .btn-entrada:hover { background-color: #15803d; }
-        .btn-saida { background-color: #dc2626; width: 100%; margin-top: 15px; }
+        .btn-saida { background-color: #dc2626; flex: 2; }
         .btn-saida:hover { background-color: #b91c1c; }
+        
+        .btn-cancelar { background-color: #64748b; flex: 1; }
+        .btn-cancelar:hover { background-color: #475569; }
+
+        .form-actions { display: flex; gap: 10px; margin-top: 15px; }
+
         .btn-acao-tabela { padding: 6px 12px; font-size: 13px; border-radius: 6px; }
         .btn-add-linha { background-color: #2563eb; margin-bottom: 15px; }
         .btn-add-linha:hover { background-color: #1d4ed8; }
@@ -193,7 +199,10 @@
                         </table>
                     </div>
 
-                    <button type="submit" class="btn btn-entrada" id="btnEntrada">Processar Entrada no Estoque</button>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-entrada" id="btnEntrada">Processar Entrada no Estoque</button>
+                        <button type="button" class="btn btn-cancelar" onclick="cancelarOperacaoEntrada()">Cancelar Operação</button>
+                    </div>
                 </form>
                 <div id="statusEntrada" class="status-msg"></div>
             </div>
@@ -233,7 +242,10 @@
                         </table>
                     </div>
 
-                    <button type="submit" class="btn btn-saida" id="btnSaida">Processar Saída no Estoque</button>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-saida" id="btnSaida">Processar Saída no Estoque</button>
+                        <button type="button" class="btn btn-cancelar" onclick="cancelarOperacaoSaida()">Cancelar Operação</button>
+                    </div>
                 </form>
                 <div id="statusSaida" class="status-msg"></div>
             </div>
@@ -432,21 +444,28 @@
             <td><button type="button" class="btn btn-remover btn-acao-tabela" onclick="removerLinha(this)">X</button></td>
         `;
         tbody.appendChild(tr);
-        // Foca no código da nova linha criada
         tr.querySelector('.input-cod').focus();
     }
 
     function handleEnterEntrada(event, inputVal) {
         if (event.key === 'Enter') {
-            event.preventDefault(); // Evita submeter o formulário
+            event.preventDefault();
             const tbody = document.getElementById('tabelaItensEntradaBody');
             const ultimaLinha = tbody.lastElementChild;
             const inputValAtual = ultimaLinha.querySelector('.input-val');
             
-            // Só adiciona nova linha se a linha atual estiver preenchida
             if (inputVal === inputValAtual && inputVal.value) {
                 adicionarLinhaEntrada();
             }
+        }
+    }
+
+    function cancelarOperacaoEntrada() {
+        if (confirm("Deseja cancelar esta operação e limpar todos os itens digitados?")) {
+            document.getElementById("entradaForm").reset();
+            document.getElementById("tabelaItensEntradaBody").innerHTML = "";
+            adicionarLinhaEntrada();
+            document.getElementById("statusEntrada").style.display = "none";
         }
     }
 
@@ -502,7 +521,7 @@
 
     function handleEnterSaida(event, inputQtd) {
         if (event.key === 'Enter') {
-            event.preventDefault(); // Evita submeter o formulário
+            event.preventDefault();
             const tbody = document.getElementById('tabelaItensSaidaBody');
             const ultimaLinha = tbody.lastElementChild;
             const inputQtdAtual = ultimaLinha.querySelector('.input-qtd-saida');
@@ -510,6 +529,15 @@
             if (inputQtd === inputQtdAtual && inputQtd.value) {
                 adicionarLinhaSaida();
             }
+        }
+    }
+
+    function cancelarOperacaoSaida() {
+        if (confirm("Deseja cancelar esta saída e limpar todos os itens digitados?")) {
+            document.getElementById("saidaForm").reset();
+            document.getElementById("tabelaItensSaidaBody").innerHTML = "";
+            adicionarLinhaSaida();
+            document.getElementById("statusSaida").style.display = "none";
         }
     }
 
